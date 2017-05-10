@@ -14,17 +14,19 @@ public:
 	//takes in a width (size of x) and sets length to same value
 	//all maps are square maps
 	//generates an array of glm::vec3 with length width * height
-	Perlin(GLuint width);
+	Perlin(int repeat = -1);
 	~Perlin();
-	glm::vec3 * cubePositions();
+	double OctavePerlin(double x, double y, double z, int octaves, double persistence);
+	double perlin(double x, double y, double z);
+	int inc(int num);
+	double grad(int hash, double x, double y, double z);
+	double fade(double t);
+	double lerp(double a, double b, double x);
+
+	int repeat;
 
 private:
-	std::vector<int> generateFrequencyVector(int maxFrequency);
-	void gradiant();
-	void createLattice(GLuint frequency);
-	double lerp(double a, double b, double x) { return a + x * (b - a); }
-
-	GLuint WIDTH = 0;
-	GLuint LENGTH = 0;
+	static std::vector<int> permutation;
+	static int p[512];
 };
 #endif
