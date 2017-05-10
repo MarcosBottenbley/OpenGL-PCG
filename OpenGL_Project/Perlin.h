@@ -11,7 +11,7 @@ public:
 	Perlin();
 	~Perlin();
 
-	glm::vec3 cubePositions[];
+	glm::vec3 cubePositions[1024];
 	GLfloat perlin(GLfloat x, GLfloat y, GLfloat z);
 
 	glm::vec3 test;
