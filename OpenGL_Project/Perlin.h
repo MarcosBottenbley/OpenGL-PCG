@@ -13,5 +13,7 @@ public:
 
 	glm::vec3 cubePositions[];
 	GLfloat perlin(GLfloat x, GLfloat y, GLfloat z);
+
+	glm::vec3 test;
 };
 #endif
