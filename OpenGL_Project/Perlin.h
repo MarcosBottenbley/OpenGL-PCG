@@ -5,15 +5,26 @@
 #include <GL\glew.h>
 #include <glm\glm.hpp>
 
+#include <vector>
+#include <iostream>
+
 class Perlin
 {
 public:
-	Perlin();
+	//takes in a width (size of x) and sets length to same value
+	//all maps are square maps
+	//generates an array of glm::vec3 with length width * height
+	Perlin(GLuint width);
 	~Perlin();
+	glm::vec3 * cubePositions();
 
-	glm::vec3 cubePositions[1024];
-	GLfloat perlin(GLfloat x, GLfloat y, GLfloat z);
+private:
+	std::vector<int> generateFrequencyVector(int maxFrequency);
+	void gradiant();
+	void createLattice(GLuint frequency);
+	double lerp(double a, double b, double x) { return a + x * (b - a); }
 
-	glm::vec3 test;
+	GLuint WIDTH = 0;
+	GLuint LENGTH = 0;
 };
 #endif
