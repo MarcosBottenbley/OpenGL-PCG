@@ -20,9 +20,11 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="Perlin.cpp" />
     <ClCompile Include="Shader.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Perlin.h" />
     <ClInclude Include="Shader.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
