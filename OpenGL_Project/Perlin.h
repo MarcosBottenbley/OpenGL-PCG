@@ -1,6 +1,4 @@
 #pragma once
-#ifndef PERLIN_H
-#define PERLIN_H
 
 #include <GL\glew.h>
 #include <glm\glm.hpp>
@@ -27,4 +25,3 @@ public:
 private:
 	//static int p[512];
 };
-#endif

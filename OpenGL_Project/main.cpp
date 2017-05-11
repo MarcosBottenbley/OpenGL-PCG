@@ -6,15 +6,14 @@
 #include <GLFW\glfw3.h>
 
 //GLM
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtc/type_ptr.hpp>
+#include "Glm_Common.h"
 
 //other std libraries
 #include <iostream>
 
 //custom .h files
 #include "Shader.h"
+#include "Camera.h"
 //#include "Perlin.h"
 
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode);
@@ -24,22 +23,14 @@ void doMovement();
 
 const GLuint WIDTH = 800, HEIGHT = 600;
 
-glm::vec3 worldUp = glm::vec3(0.0f, 1.0f, 0.0f);
-glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 10.0f);
-glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
-glm::vec3 cameraTarget = glm::vec3(0.0f, 0.0f, 0.0f);
-glm::vec3 cameraDir = glm::normalize(cameraPos - cameraTarget);
-glm::vec3 cameraRight = glm::normalize(glm::cross(worldUp, cameraDir));
-glm::vec3 cameraUp = glm::normalize(glm::cross(cameraDir, cameraRight));
-
 GLfloat lastX = WIDTH / 2.0, lastY = HEIGHT / 2.0;
-GLfloat pitch = 0.0f;
-GLfloat yaw = -90.0f;
 
 bool keys[1024];
 
 GLfloat deltaTime = 0.0f;
 GLfloat lastFrame = 0.0f;
+
+Camera camera(Vector3(0.0f, 0.0f, 10.0f));
 
 int main()
 {
@@ -79,10 +70,10 @@ int main()
 
 	GLfloat vertices[] = {
 		//back
-		0.5f, -0.5f, -0.5f,
+		 0.5f, -0.5f, -0.5f,
 		-0.5f, -0.5f, -0.5f,
 		-0.5f,  0.5f, -0.5f,
-		0.5f,  0.5f, -0.5f,
+		 0.5f,  0.5f, -0.5f,
 
 		//right
 		0.5f, -0.5f,  0.5f,
@@ -92,8 +83,8 @@ int main()
 
 		//front
 		-0.5f, -0.5f,  0.5f,
-		0.5f, -0.5f,  0.5f,
-		0.5f,  0.5f,  0.5f,
+		 0.5f, -0.5f,  0.5f,
+		 0.5f,  0.5f,  0.5f,
 		-0.5f,  0.5f,  0.5f,
 
 		//left
@@ -104,14 +95,14 @@ int main()
 
 		//top
 		-0.5f,  0.5f,  0.5f,
-		0.5f,  0.5f,  0.5f,
-		0.5f,  0.5f, -0.5f,
+		 0.5f,  0.5f,  0.5f,
+		 0.5f,  0.5f, -0.5f,
 		-0.5f,  0.5f, -0.5f,
 
 		//bottom
 		-0.5f, -0.5f, -0.5f,	//front left - 16
-		0.5f, -0.5f, -0.5f,	//front right - 17
-		0.5f, -0.5f,  0.5f,	//back right - 18
+		 0.5f, -0.5f, -0.5f,	//front right - 17
+		 0.5f, -0.5f,  0.5f,	//back right - 18
 		-0.5f, -0.5f,  0.5f		//back left - 19
 	};
 
@@ -198,7 +189,7 @@ int main()
 		double greenValue = (cos(timeValue)) + 0.5f;
 
 		glm::mat4 view;
-		view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
+		view = camera.getViewMatrix();
 
 		glm::mat4 projection;
 		projection = glm::perspective(45.0f, (GLfloat) WIDTH / (GLfloat) HEIGHT, 0.1f, 100.0f);
@@ -286,41 +277,24 @@ void cursor_position_callback(GLFWwindow * window, double xpos, double ypos)
 		firstMouse = false;
 	}
 
-	GLfloat xOffset = (GLfloat) (xpos - lastX);
-	GLfloat yOffset = (GLfloat) (lastY - ypos);
+	GLfloat xoffset = (GLfloat) (xpos - lastX);
+	GLfloat yoffset = (GLfloat) (lastY - ypos);
 	lastX = (GLfloat) xpos;
 	lastY = (GLfloat) ypos;
 
-	GLfloat sensitivity = 0.05f;
-	xOffset *= sensitivity;
-	yOffset *= sensitivity;
-
-	yaw += (GLfloat) xOffset;
-	pitch += (GLfloat) yOffset;
-
-	if (pitch > 90.0f)
-		pitch = 90.0f;
-	if (pitch < -90.0f)
-		pitch = -90.0f;
-
-	glm::vec3 front;
-	front.x = cos(glm::radians(pitch)) * cos(glm::radians(yaw));
-	front.y = sin(glm::radians(pitch));
-	front.z = cos(glm::radians(pitch)) * sin(glm::radians(yaw));
-	cameraFront = glm::normalize(front);
+	camera.rotateCamera(xoffset, yoffset);
 }
 
 void doMovement()
 {
-	GLfloat cameraSpeed = 5.0f * deltaTime;
 	if (keys[GLFW_KEY_W])
-		cameraPos += cameraFront * cameraSpeed;
+		camera.moveCamera(FORWARD, deltaTime);
 	if (keys[GLFW_KEY_S])
-		cameraPos -= cameraFront * cameraSpeed;
+		camera.moveCamera(BACKWARD, deltaTime);
 	if (keys[GLFW_KEY_A])
-		cameraPos -= glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
+		camera.moveCamera(LEFT, deltaTime);
 	if (keys[GLFW_KEY_D])
-		cameraPos += glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
+		camera.moveCamera(RIGHT, deltaTime);
 	if (keys[GLFW_KEY_R])
-		cameraPos = glm::vec3(0.0f, 0.0f, -1.0);
+		camera.reset();
 }

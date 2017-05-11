@@ -1,6 +1,4 @@
 #pragma once
-#ifndef SHADER_H
-#define SHADER_H
 
 #include <string>
 #include <fstream>
@@ -20,4 +18,3 @@ public:
 private:
 	void compileShaders(const GLchar* vShaderCode, const GLchar* fShaderCode);
 };
-#endif
