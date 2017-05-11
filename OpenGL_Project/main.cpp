@@ -15,6 +15,7 @@
 
 //custom .h files
 #include "Shader.h"
+//#include "Perlin.h"
 
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode);
 void cursor_position_callback(GLFWwindow* window, double xpos, double ypos);
@@ -71,89 +72,85 @@ int main()
 	glViewport(0, 0, WIDTH, HEIGHT);
 
 	glEnable(GL_DEPTH_TEST);
+	glEnable(GL_CULL_FACE);
+	glCullFace(GL_BACK);
 
 	Shader myShader("shader.vs","shader.frag");
 
 	GLfloat vertices[] = {
+		//back
+		0.5f, -0.5f, -0.5f,
 		-0.5f, -0.5f, -0.5f,
-		 0.5f, -0.5f, -0.5f,
-		 0.5f,  0.5f, -0.5f,
-		 0.5f,  0.5f, -0.5f,
 		-0.5f,  0.5f, -0.5f,
-		-0.5f, -0.5f, -0.5f,
+		0.5f,  0.5f, -0.5f,
 
-		-0.5f, -0.5f,  0.5f,
-		 0.5f, -0.5f,  0.5f,
-		 0.5f,  0.5f,  0.5f,
-		 0.5f,  0.5f,  0.5f,
-		-0.5f,  0.5f,  0.5f,
-		-0.5f, -0.5f,  0.5f,
+		//right
+		0.5f, -0.5f,  0.5f,
+		0.5f, -0.5f, -0.5f,
+		0.5f,  0.5f, -0.5f,
+		0.5f,  0.5f,  0.5f,
 
-		-0.5f,  0.5f,  0.5f,
-		-0.5f,  0.5f, -0.5f,
-		-0.5f, -0.5f, -0.5f,
-		-0.5f, -0.5f, -0.5f,
+		//front
 		-0.5f, -0.5f,  0.5f,
+		0.5f, -0.5f,  0.5f,
+		0.5f,  0.5f,  0.5f,
 		-0.5f,  0.5f,  0.5f,
 
-		 0.5f,  0.5f,  0.5f,
-		 0.5f,  0.5f, -0.5f,
-		 0.5f, -0.5f, -0.5f,
-		 0.5f, -0.5f, -0.5f,
-		 0.5f, -0.5f,  0.5f,
-		 0.5f,  0.5f,  0.5f,
-
+		//left
 		-0.5f, -0.5f, -0.5f,
-		 0.5f, -0.5f, -0.5f,
-		 0.5f, -0.5f,  0.5f,
-		 0.5f, -0.5f,  0.5f,
 		-0.5f, -0.5f,  0.5f,
-		-0.5f, -0.5f, -0.5f,
-
-		-0.5f,  0.5f, -0.5f,
-		 0.5f,  0.5f, -0.5f,
-		 0.5f,  0.5f,  0.5f,
-		 0.5f,  0.5f,  0.5f,
 		-0.5f,  0.5f,  0.5f,
 		-0.5f,  0.5f, -0.5f,
+
+		//top
+		-0.5f,  0.5f,  0.5f,
+		0.5f,  0.5f,  0.5f,
+		0.5f,  0.5f, -0.5f,
+		-0.5f,  0.5f, -0.5f,
+
+		//bottom
+		-0.5f, -0.5f, -0.5f,	//front left - 16
+		0.5f, -0.5f, -0.5f,	//front right - 17
+		0.5f, -0.5f,  0.5f,	//back right - 18
+		-0.5f, -0.5f,  0.5f		//back left - 19
 	};
 
+	
 	GLuint indices[] = {
-		0, 1, 3,
-		1, 2, 3
+		//back
+		0, 1, 2,
+		2, 3, 0,
+
+		//front
+		4, 5, 6,
+		6, 7, 4,
+
+		//left
+		8, 9, 10,
+		10, 11, 8,
+
+		//right
+		12, 13, 14,
+		14, 15, 12,
+
+		//bottom
+		16, 17, 18,
+		18, 19, 16,
+
+		//top
+		20, 21, 22,
+		22, 23, 20
 	};
 
-	glm::vec3 cubePositions[] = {
-		glm::vec3(0.0f,  0.0f,  0.0f),
-
-		glm::vec3(1.0f,  0.0f,  0.0f),
-		glm::vec3(-1.0f,  0.0f,  0.0f),
-		glm::vec3(2.0f,  0.0f,  0.0f),
-		glm::vec3(-2.0f,  0.0f,  0.0f),
-
-		glm::vec3(0.0f, 0.0f, 1.0f),
-		glm::vec3(0.0f, 0.0f, -1.0f),
-		glm::vec3(0.0f, 0.0f, 2.0f),
-		glm::vec3(0.0f, 0.0f, -2.0f),
-
-		glm::vec3(1.0f, 0.0f, 1.0f),
-		glm::vec3(1.0f, 0.0f, 2.0f),
-		glm::vec3(1.0f, 0.0f, -1.0f),
-		glm::vec3(1.0f, 0.0f, -2.0f),
-		glm::vec3(2.0f, 0.0f, 1.0f),
-		glm::vec3(2.0f, 0.0f, 2.0f),
-		glm::vec3(2.0f, 0.0f, -1.0f),
-		glm::vec3(2.0f, 0.0f, -2.0f),
-
-		glm::vec3(-1.0f, 0.0f, 1.0f),
-		glm::vec3(-1.0f, 0.0f, 2.0f),
-		glm::vec3(-1.0f, 0.0f, -1.0f),
-		glm::vec3(-1.0f, 0.0f, -2.0f),
-		glm::vec3(-2.0f, 0.0f, 1.0f),
-		glm::vec3(-2.0f, 0.0f, 2.0f),
-		glm::vec3(-2.0f, 0.0f, -1.0f),
-		glm::vec3(-2.0f, 0.0f, -2.0f)
-	};
+	const int platformWidth = 50, platformLength = 50;
+	glm::vec3 cubePositions[platformWidth * platformLength];
+	for (int x = 0; x < platformWidth; x++)
+	{
+		for (int z = 0; z < platformLength; z++)
+		{
+			cubePositions[x * platformWidth + z] = glm::vec3((GLfloat) x, (GLfloat) (rand() % 100 + 1), (GLfloat)z);
+		}
+	}
 
 	GLuint VBO, VAO, EBO;
 
@@ -165,19 +162,23 @@ int main()
 	glGenBuffers(1, &EBO);
 
 	//=========
-	//RECTANGLE
+	//CUBE
 	//=========
 	glBindVertexArray(VAO);
+
 	glBindBuffer(GL_ARRAY_BUFFER, VBO);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (GLvoid*)0);
-	//glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-	//glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
 	glEnableVertexAttribArray(0);
-	glBindVertexArray(0);
 
 	//unbind GL_ARRAY_BUFFER
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+	glBindVertexArray(0);
 
 	while (!glfwWindowShouldClose(window))
 	{
@@ -207,8 +208,6 @@ int main()
 		GLuint viewLoc = glGetUniformLocation(myShader.Program, "view");
 		GLuint projectionLoc = glGetUniformLocation(myShader.Program, "projection");
 
-		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-
 		glBindVertexArray(VAO);
 		//activate first shader
 		//shader must be activated before uniforms are filled with data
@@ -230,15 +229,18 @@ int main()
 		{
 			glm::mat4 model;
 			model = glm::translate(model, cubePositions[i]);
-			model = glm::rotate(model, (GLfloat)glfwGetTime() * 0.0f, glm::vec3(1.0f, 1.0f, 1.0f));
+			int r = rand() % (50 * 50);
 			glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
-			//glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-			glDrawArrays(GL_TRIANGLES, 0, 36);
-			glUniform4f(vertexColorLocation, 1.0f, 1.0f, 1.0f, 1.0f);
+			glDrawElements(GL_TRIANGLE_FAN, sizeof(vertices) / sizeof(vertices[0]), GL_UNSIGNED_INT, nullptr);
+			glUniform4f(vertexColorLocation, 0.0f, 0.0f, 0.0f, 1.0f);
 			glLineWidth(3.0f);
-			glDrawArrays(GL_LINE_STRIP, 0, 36);
-			//glUniform4f(vertexColorLocation, 0.0f, 0.0f, 0.0f, 1.0f);
-			glUniform4f(vertexColorLocation, (GLfloat)greenValue, 0.0f, (GLfloat)redValue, 1.0f);
+			glPointSize(3.0f);
+			glDrawElements(GL_LINE_STRIP, sizeof(vertices) / sizeof(vertices[0]), GL_UNSIGNED_INT, nullptr);
+			if (i == r)
+			{
+				model = glm::rotate(model, (GLfloat)sin(glfwGetTime()) * 5.0f, glm::vec3(1.0f, 1.0f, 1.0f));
+				glUniform4f(vertexColorLocation, (GLfloat)greenValue, 0.0f, (GLfloat)redValue, 1.0f);
+			}
 		}
 
 		glBindVertexArray(0);

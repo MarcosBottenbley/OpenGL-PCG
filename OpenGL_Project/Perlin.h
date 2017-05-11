@@ -14,8 +14,7 @@ public:
 	//takes in a width (size of x) and sets length to same value
 	//all maps are square maps
 	//generates an array of glm::vec3 with length width * height
-	Perlin(int repeat = -1);
-	~Perlin();
+	Perlin();
 	double OctavePerlin(double x, double y, double z, int octaves, double persistence);
 	double perlin(double x, double y, double z);
 	int inc(int num);
@@ -26,7 +25,6 @@ public:
 	int repeat;
 
 private:
-	static std::vector<int> permutation;
-	static int p[512];
+	//static int p[512];
 };
 #endif
