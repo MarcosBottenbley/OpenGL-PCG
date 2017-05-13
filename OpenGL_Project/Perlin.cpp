@@ -2,29 +2,29 @@
 
 Perlin::Perlin()
 {
-	this->repeat = 3;
+	this->repeat = 40;
 
 	for (int x = 0; x < 512; x++)
 	{
-		//p[x] = permutation[x % 256];
+		p[x] = permutation[x % 256];
 	}
 }
 
-double Perlin::OctavePerlin(double x, double y, double z, int octaves, double persistence)
+double Perlin::OctavePerlin(double x, double y, double z, int octaves, double persistence, double lacunarity)
 {
 	double total = 0;
 	double frequency = 1;
 	double amplitude = 1;
-	double maxValue = 0;
+	double noiseHeight = 0;
 	for (int i = 0; i < octaves; i++)
 	{
 		total += perlin(x * frequency, y * frequency, z * frequency) * amplitude;
-		maxValue += amplitude;
+		noiseHeight += amplitude;
 		amplitude *= persistence;
-		frequency *= 2;
+		frequency *= lacunarity;
 	}
 
-	return total / maxValue;
+	return total / noiseHeight;
 }
 
 double Perlin::perlin(double x, double y, double z)
@@ -39,7 +39,6 @@ double Perlin::perlin(double x, double y, double z)
 	double v = fade(yf);
 	double w = fade(zf);
 
-	/*
 	int aaa, aba, aab, abb, baa, bba, bab, bbb;
 	aaa = p[p[p[xi] + yi] + zi];
 	aba = p[p[p[xi] + inc(yi)] + zi];
@@ -57,10 +56,8 @@ double Perlin::perlin(double x, double y, double z)
 	x1 = lerp(grad(aab, xf, yf, zf - 1), grad(bab, xf - 1, yf, zf - 1), u);
 	x2 = lerp(grad(abb, xf, yf - 1, zf - 1), grad(bbb, xf - 1, yf - 1, zf - 1), u);
 	y2 = lerp(x1, x2, v);
-	
+
 	return (lerp(y1, y2, w) + 1) / 2;
-	*/
-	return 0.0;
 }
 
 int Perlin::inc(int num)

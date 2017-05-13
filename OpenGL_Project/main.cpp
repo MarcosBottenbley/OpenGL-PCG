@@ -10,18 +10,19 @@
 
 //other std libraries
 #include <iostream>
+#include <math.h>
 
 //custom .h files
 #include "Shader.h"
 #include "Camera.h"
-//#include "Perlin.h"
+#include "Perlin.h"
 
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode);
 void cursor_position_callback(GLFWwindow* window, double xpos, double ypos);
 
 void doMovement();
 
-const GLuint WIDTH = 800, HEIGHT = 600;
+const GLuint WIDTH = 1024, HEIGHT = 760;
 
 GLfloat lastX = WIDTH / 2.0, lastY = HEIGHT / 2.0;
 
@@ -133,13 +134,29 @@ int main()
 		22, 23, 20
 	};
 
-	const int platformWidth = 50, platformLength = 50;
-	glm::vec3 cubePositions[platformWidth * platformLength];
-	for (int x = 0; x < platformWidth; x++)
+	const int platformWidth = 100, platformLength = 100;
+	Perlin* p = new Perlin();
+	double noise[platformWidth][platformLength];
+	/*
+	for (double x = 0; x < 0.99; x+= 0.1)
 	{
-		for (int z = 0; z < platformLength; z++)
+		for (double y = 0; y < 0.99; y+= 0.1)
 		{
-			cubePositions[x * platformWidth + z] = glm::vec3((GLfloat) x, (GLfloat) (rand() % 100 + 1), (GLfloat)z);
+			noise[(int)x * 10][(int)y * 10] = p->perlin(x, y, 0);
+			std::cout << noise[(int) x*10][(int)y*10] << std::endl;
+		}
+	}
+	*/
+	int octaves = 4;
+	double persistence = 0.5;
+	double lacunarity = 1.5;
+	for (double x = 0; x < platformWidth; x++)
+	{//Loops to loop trough all the pixels
+		for (double y = 0; y < platformLength; y++)
+		{
+			double getnoise = 0;
+			getnoise = p->OctavePerlin(x / 30, y / 30, 0, octaves, persistence, lacunarity);
+			noise[(int) x][(int) y] = ceil(getnoise * 10);
 		}
 	}
 
@@ -184,10 +201,6 @@ int main()
 		glClearColor(0.2f, 0.3f, 0.5f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		double timeValue = glfwGetTime();
-		double redValue = (sin(timeValue)) + 0.5f;
-		double greenValue = (cos(timeValue)) + 0.5f;
-
 		glm::mat4 view;
 		view = camera.getViewMatrix();
 
@@ -198,6 +211,7 @@ int main()
 		GLuint modelLoc = glGetUniformLocation(myShader.Program, "model");
 		GLuint viewLoc = glGetUniformLocation(myShader.Program, "view");
 		GLuint projectionLoc = glGetUniformLocation(myShader.Program, "projection");
+		GLuint vertexColorLocation = glGetUniformLocation(myShader.Program, "ourColor");
 
 		glBindVertexArray(VAO);
 		//activate first shader
@@ -206,31 +220,27 @@ int main()
 
 		glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
 		glUniformMatrix4fv(projectionLoc, 1, GL_FALSE, glm::value_ptr(projection));
-		//set color of rectangle
-		GLuint vertexColorLocation = glGetUniformLocation(myShader.Program, "ourColor");
-		//glUniform4f(vertexColorLocation, 0.0f, 0.0f, 0.0f, 1.0f);
-		glUniform4f(vertexColorLocation, (GLfloat)greenValue, (GLfloat)redValue, 0.0f, 1.0f);
 
 		/*Scale first
 		  Translate seconds
 		  Rotate last
 		  This order keeps openGl from doing weird things
 		*/
-		for (GLuint i = 0; i < sizeof(cubePositions) / sizeof(cubePositions[0]); i++)
+		for (int x = 0; x < platformWidth; x++)
 		{
-			glm::mat4 model;
-			model = glm::translate(model, cubePositions[i]);
-			int r = rand() % (50 * 50);
-			glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
-			glDrawElements(GL_TRIANGLE_FAN, sizeof(vertices) / sizeof(vertices[0]), GL_UNSIGNED_INT, nullptr);
-			glUniform4f(vertexColorLocation, 0.0f, 0.0f, 0.0f, 1.0f);
-			glLineWidth(3.0f);
-			glPointSize(3.0f);
-			glDrawElements(GL_LINE_STRIP, sizeof(vertices) / sizeof(vertices[0]), GL_UNSIGNED_INT, nullptr);
-			if (i == r)
+			for (int z = 0; z < platformLength; z++)
 			{
-				model = glm::rotate(model, (GLfloat)sin(glfwGetTime()) * 5.0f, glm::vec3(1.0f, 1.0f, 1.0f));
-				glUniform4f(vertexColorLocation, (GLfloat)greenValue, 0.0f, (GLfloat)redValue, 1.0f);
+				for (int y = 0; y < noise[x][z]; y++)
+				{
+					glm::mat4 model;
+					model = glm::translate(model, Vector3((GLfloat)x, (GLfloat)y, (GLfloat)z));
+					glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+					glDrawElements(GL_TRIANGLE_FAN, sizeof(vertices) / sizeof(vertices[0]), GL_UNSIGNED_INT, nullptr);
+					glUniform4f(vertexColorLocation, 0.112f, 0.128f, 0.144f, 1.0f);
+					glLineWidth(3.0f);
+					glDrawElements(GL_LINE_LOOP, sizeof(vertices) / sizeof(vertices[0]), GL_UNSIGNED_INT, nullptr);
+					glUniform4f(vertexColorLocation, 0.2f, 0.6f, 0.2f, 1.0f);
+				}
 			}
 		}
 
