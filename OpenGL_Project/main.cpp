@@ -33,6 +33,11 @@ GLfloat lastFrame = 0.0f;
 
 Camera camera(Vector3(0.0f, 0.0f, 10.0f));
 
+int octaves = 4;
+double persistence = 0.5;
+double lacunarity = 1.5;
+double scale = 10.0;
+
 int main()
 {
 	glfwInit();
@@ -134,32 +139,9 @@ int main()
 		22, 23, 20
 	};
 
-	const int platformWidth = 100, platformLength = 100;
+	const int platformWidth = 50, platformLength = 50;
 	Perlin* p = new Perlin();
 	double noise[platformWidth][platformLength];
-	/*
-	for (double x = 0; x < 0.99; x+= 0.1)
-	{
-		for (double y = 0; y < 0.99; y+= 0.1)
-		{
-			noise[(int)x * 10][(int)y * 10] = p->perlin(x, y, 0);
-			std::cout << noise[(int) x*10][(int)y*10] << std::endl;
-		}
-	}
-	*/
-	int octaves = 4;
-	double persistence = 0.5;
-	double lacunarity = 1.5;
-	double scale = 1;
-	for (double x = 0; x < platformWidth; x++)
-	{//Loops to loop trough all the pixels
-		for (double y = 0; y < platformLength; y++)
-		{
-			double getnoise = 0;
-			getnoise = p->OctavePerlin(x / 30, y / 30, 0, octaves, persistence, lacunarity, scale);
-			noise[(int) x][(int) y] = getnoise * 50;
-		}
-	}
 
 	GLuint VBO, VAO, EBO;
 
@@ -176,10 +158,10 @@ int main()
 	glBindVertexArray(VAO);
 
 	glBindBuffer(GL_ARRAY_BUFFER, VBO);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_DYNAMIC_DRAW);
 
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_DYNAMIC_DRAW);
 
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (GLvoid*)0);
 	glEnableVertexAttribArray(0);
@@ -197,6 +179,17 @@ int main()
 
 		glfwPollEvents();
 		doMovement();
+
+		//realtime perlin noise
+		for (double x = 0; x < platformWidth; x++)
+		{//Loops to loop trough all the pixels
+			for (double y = 0; y < platformLength; y++)
+			{
+				double getnoise = 0;
+				getnoise = p->OctavePerlin(x / 30, y / 30, 0, octaves, persistence, lacunarity, scale);
+				noise[(int)x][(int)y] = (int)(getnoise * 50);
+			}
+		}
 
 		//render and clear the color buffer
 		glClearColor(0.2f, 0.3f, 0.5f, 1.0f);
@@ -231,16 +224,19 @@ int main()
 		{
 			for (int z = 0; z < platformLength; z++)
 			{
-				for (int y = 0; y < noise[x][z]; y++)
+				for (double y = 0; y <= noise[x][z]; y+= 1.0)
 				{
-					glm::mat4 model;
-					model = glm::translate(model, Vector3((GLfloat)x, (GLfloat)y, (GLfloat)z));
-					glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
-					glDrawElements(GL_TRIANGLE_FAN, sizeof(vertices) / sizeof(vertices[0]), GL_UNSIGNED_INT, nullptr);
-					glUniform4f(vertexColorLocation, 0.112f, 0.128f, 0.144f, 1.0f);
-					glLineWidth(3.0f);
-					glDrawElements(GL_LINE_LOOP, sizeof(vertices) / sizeof(vertices[0]), GL_UNSIGNED_INT, nullptr);
-					glUniform4f(vertexColorLocation, 0.2f, 0.6f, 0.2f, 1.0f);
+					if (!(x > 0 && x < platformWidth -1 && z > 0 && z < platformLength - 1) || y >= (int) noise[x][z] - 3)
+					{
+						glm::mat4 model;
+						model = glm::translate(model, Vector3((GLfloat)x, (GLfloat)y, (GLfloat)z));
+						glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+						glDrawElements(GL_TRIANGLE_FAN, sizeof(vertices) / sizeof(vertices[0]), GL_UNSIGNED_INT, nullptr);
+						glUniform4f(vertexColorLocation, 0.112f, 0.128f, 0.144f, 1.0f);
+						glLineWidth(3.0f);
+						glDrawElements(GL_LINE_LOOP, sizeof(vertices) / sizeof(vertices[0]), GL_UNSIGNED_INT, nullptr);
+						glUniform4f(vertexColorLocation, 0.2f, 0.6f, 0.2f, 1.0f);
+					}
 				}
 			}
 		}
@@ -298,6 +294,11 @@ void cursor_position_callback(GLFWwindow * window, double xpos, double ypos)
 
 void doMovement()
 {
+	bool oct = keys[GLFW_KEY_O];
+	bool pers = keys[GLFW_KEY_P];
+	bool lac = keys[GLFW_KEY_L];
+	bool scl = keys[GLFW_KEY_K];
+
 	if (keys[GLFW_KEY_W])
 		camera.moveCamera(FORWARD, deltaTime);
 	if (keys[GLFW_KEY_S])
@@ -308,4 +309,26 @@ void doMovement()
 		camera.moveCamera(RIGHT, deltaTime);
 	if (keys[GLFW_KEY_R])
 		camera.reset();
+	if (keys[GLFW_KEY_UP])
+	{
+		if (oct)
+			octaves++;
+		if (pers)
+			persistence += 0.1;
+		if (lac)
+			lacunarity += 0.1;
+		if (scl)
+			scale += 0.5;
+	}
+	else if (keys[GLFW_KEY_DOWN])
+	{
+		if (oct)
+			octaves--;
+		if (pers)
+			persistence -= 0.1;
+		if (lac)
+			lacunarity -= 0.1;
+		if (scl)
+			scale -= 0.5;
+	}
 }
