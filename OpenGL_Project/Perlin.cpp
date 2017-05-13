@@ -10,15 +10,21 @@ Perlin::Perlin()
 	}
 }
 
-double Perlin::OctavePerlin(double x, double y, double z, int octaves, double persistence, double lacunarity)
+double Perlin::OctavePerlin(double x, double y, double z, int octaves, double persistence, double lacunarity, double scale)
 {
+	if (scale <= 0)
+		scale = 0.0001;
+
 	double total = 0;
 	double frequency = 1;
 	double amplitude = 1;
 	double noiseHeight = 0;
 	for (int i = 0; i < octaves; i++)
 	{
-		total += perlin(x * frequency, y * frequency, z * frequency) * amplitude;
+		double sampleX = x / scale * frequency;
+		double sampleY = y / scale * frequency;
+		double sampleZ = z / scale * frequency;
+		total += perlin(sampleX, sampleY, sampleZ) * amplitude;
 		noiseHeight += amplitude;
 		amplitude *= persistence;
 		frequency *= lacunarity;

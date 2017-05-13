@@ -65,7 +65,7 @@ int main()
 
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_CULL_FACE);
-	glCullFace(GL_BACK);
+	glCullFace(GL_FRONT);
 
 	Shader myShader("Shaders/vertexShader.glsl","Shaders/fragmentShader.glsl");
 
@@ -150,13 +150,14 @@ int main()
 	int octaves = 4;
 	double persistence = 0.5;
 	double lacunarity = 1.5;
+	double scale = 1;
 	for (double x = 0; x < platformWidth; x++)
 	{//Loops to loop trough all the pixels
 		for (double y = 0; y < platformLength; y++)
 		{
 			double getnoise = 0;
-			getnoise = p->OctavePerlin(x / 30, y / 30, 0, octaves, persistence, lacunarity);
-			noise[(int) x][(int) y] = ceil(getnoise * 10);
+			getnoise = p->OctavePerlin(x / 30, y / 30, 0, octaves, persistence, lacunarity, scale);
+			noise[(int) x][(int) y] = getnoise * 50;
 		}
 	}
 

@@ -13,13 +13,12 @@ public:
 	//all maps are square maps
 	//generates an array of glm::vec3 with length width * height
 	Perlin();
-	double OctavePerlin(double x, double y, double z, int octaves, double persistence, double lacunarity);
+	double OctavePerlin(double x, double y, double z, int octaves, double persistence, double lacunarity, double scale);
 	double perlin(double x, double y, double z);
 	int inc(int num);
 	double grad(int hash, double x, double y, double z);
 	double fade(double t);
 	double lerp(double a, double b, double x);
-	double findnoise2(double x, double y);
 
 	int repeat;
 	int p[512];
@@ -37,5 +36,4 @@ public:
 		49,192,214, 31,181,199,106,157,184, 84,204,176,115,121,50,45,127, 4,150,254,
 		138,236,205,93,222,114,67,29,24,72,243,141,128,195,78,66,215,61,156,180
 	};
-private:
 };
