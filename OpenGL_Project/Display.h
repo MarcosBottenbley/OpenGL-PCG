@@ -11,6 +11,16 @@
 class Display
 {
 public:
+	Display(GLuint width, GLuint height);
+	bool isOpen();
+	void close();
+	GLFWwindow* getWindow() const;
+	GLuint getWidth() const;
+	GLuint getHeight() const;
 
+private:
+	GLFWwindow* window;
+	GLuint width;
+	GLuint height;
 };
 

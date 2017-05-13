@@ -66,7 +66,7 @@ int main()
 	glEnable(GL_CULL_FACE);
 	glCullFace(GL_BACK);
 
-	Shader myShader("shader.vs","shader.frag");
+	Shader myShader("Shaders/vertexShader.glsl","Shaders/fragmentShader.glsl");
 
 	GLfloat vertices[] = {
 		//back
