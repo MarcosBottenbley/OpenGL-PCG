@@ -33,12 +33,17 @@ GLfloat lastFrame = 0.0f;
 
 Camera camera(Vector3(0.0f, 0.0f, 10.0f));
 
+// Light attributes
+glm::vec3 lightPos(1.2f, 50.0f, 2.0f);
+
 int octaves = 4;
-double persistence = 0.5;
-double lacunarity = 1.5;
+double persistence = 20;
+double lacunarity = 3;
 double scale = 10.0;
 
-int main()
+GLFWwindow* window;
+
+void init()
 {
 	glfwInit();
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
@@ -46,12 +51,12 @@ int main()
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 	glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
 
-	GLFWwindow* window = glfwCreateWindow(WIDTH, HEIGHT, "LearnOpenGL", nullptr, nullptr);
+	window = glfwCreateWindow(WIDTH, HEIGHT, "LearnOpenGL", nullptr, nullptr);
 	if (window == nullptr)
 	{
 		std::cout << "Failed to initilize GLFW" << std::endl;
 		glfwTerminate();
-		return -1;
+		exit(EXIT_FAILURE);
 	}
 	glfwMakeContextCurrent(window);
 
@@ -63,16 +68,22 @@ int main()
 	if (glewInit() != GLEW_OK)
 	{
 		std::cout << "Failed to initilize GLEW" << std::endl;
-		return -1;
+		exit(EXIT_FAILURE);
 	}
 
 	glViewport(0, 0, WIDTH, HEIGHT);
+}
+
+int main()
+{
+	init();
 
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_CULL_FACE);
-	glCullFace(GL_FRONT);
+	glCullFace(GL_BACK);
 
-	Shader myShader("Shaders/vertexShader.glsl","Shaders/fragmentShader.glsl");
+	Shader cubeShader("Shaders/vertexShader.glsl","Shaders/blockFragmentShader.glsl");
+	Shader lampShader("Shaders/vertexShader.glsl", "Shaders/lampFragmentShader.glsl");
 
 	GLfloat vertices[] = {
 		//back
@@ -106,70 +117,127 @@ int main()
 		-0.5f,  0.5f, -0.5f,
 
 		//bottom
-		-0.5f, -0.5f, -0.5f,	//front left - 16
-		 0.5f, -0.5f, -0.5f,	//front right - 17
-		 0.5f, -0.5f,  0.5f,	//back right - 18
-		-0.5f, -0.5f,  0.5f		//back left - 19
+		-0.5f, -0.5f, -0.5f,
+		 0.5f, -0.5f, -0.5f,
+		 0.5f, -0.5f,  0.5f,
+		-0.5f, -0.5f,  0.5f
 	};
 
-	
-	GLuint indices[] = {
+	GLfloat normals[] = {
 		//back
+		 0.0f,  0.0f, -1.0f,
+		 0.0f,  0.0f, -1.0f,
+		 0.0f,  0.0f, -1.0f,
+		 0.0f,  0.0f, -1.0f,
+
+		//right
+		1.0f,  0.0f,  0.0f,
+		1.0f,  0.0f,  0.0f,
+		1.0f,  0.0f,  0.0f,
+		1.0f,  0.0f,  0.0f,
+
+		//front
+		 0.0f,  0.0f,  1.0f,
+		 0.0f,  0.0f,  1.0f,
+		 0.0f,  0.0f,  1.0f,
+		 0.0f,  0.0f,  1.0f,
+
+		//left
+		-1.0f,  0.0f,  0.0f,
+		-1.0f,  0.0f,  0.0f,
+		-1.0f,  0.0f,  0.0f,
+		-1.0f,  0.0f,  0.0f,
+
+		//top
+		 0.0f,  1.0f,  0.0f,
+		 0.0f,  1.0f,  0.0f,
+		 0.0f,  1.0f,  0.0f,
+		 0.0f,  1.0f,  0.0f,
+
+		//bottom
+		 0.0f, -1.0f,  0.0f,
+		 0.0f, -1.0f,  0.0f,
+		 0.0f, -1.0f,  0.0f,
+		 0.0f, -1.0f,  0.0f
+	};
+
+	GLuint indices[] = {
 		0, 1, 2,
 		2, 3, 0,
 
-		//front
 		4, 5, 6,
 		6, 7, 4,
 
-		//left
 		8, 9, 10,
 		10, 11, 8,
 
-		//right
 		12, 13, 14,
 		14, 15, 12,
 
-		//bottom
 		16, 17, 18,
 		18, 19, 16,
 
-		//top
 		20, 21, 22,
 		22, 23, 20
 	};
 
-	const int platformWidth = 50, platformLength = 50;
+	const int platformWidth = 16, platformLength = 16;
 	Perlin* p = new Perlin();
 	double noise[platformWidth][platformLength];
 
-	GLuint VBO, VAO, EBO;
+	for (double x = 0; x < platformWidth; x++)
+	{//Loops to loop trough all the pixels
+		for (double y = 0; y < platformLength; y++)
+		{
+			double getnoise = 0;
+			getnoise = p->OctavePerlin(x / 30, y / 30, 0, octaves, persistence, lacunarity, scale);
+			noise[(int)x][(int)y] = (int)(getnoise * 16);
+		}
+	}
 
-	//generating VAOs
+	// First, set the container's VAO (and VBO)
+	GLuint VBO, VBON, VAO, EBO;
 	glGenVertexArrays(1, &VAO);
-	//generating VBOs
 	glGenBuffers(1, &VBO);
-	//generating EBOs
+	glGenBuffers(1, &VBON);
 	glGenBuffers(1, &EBO);
 
-	//=========
-	//CUBE
-	//=========
 	glBindVertexArray(VAO);
 
 	glBindBuffer(GL_ARRAY_BUFFER, VBO);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_DYNAMIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
 
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_DYNAMIC_DRAW);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
 
+	// Position attribute
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (GLvoid*)0);
 	glEnableVertexAttribArray(0);
 
-	//unbind GL_ARRAY_BUFFER
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	// Normal attribute
+	glBindBuffer(GL_ARRAY_BUFFER, VBON);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(normals), normals, GL_STATIC_DRAW);
 
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (GLvoid*)0);
+	glEnableVertexAttribArray(1);
 	glBindVertexArray(0);
+
+	// Then, we set the light's VAO (VBO stays the same. After all, the vertices are the same for the light object (also a 3D cube))
+	GLuint lightVAO;
+	glGenVertexArrays(1, &lightVAO);
+	glBindVertexArray(lightVAO);
+	// We only need to bind to the VBO (to link it with glVertexAttribPointer), no need to fill it; the VBO's data already contains all we need.
+	glBindBuffer(GL_ARRAY_BUFFER, VBO);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+
+	// Set the vertex attributes (only position data for the lamp))
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (GLvoid*)0); // Note that we skip over the normal vectors
+	glEnableVertexAttribArray(0);
+	glBindVertexArray(0);
+
+	double lastTime = glfwGetTime();
+	int frames = 0;
 
 	while (!glfwWindowShouldClose(window))
 	{
@@ -177,23 +245,28 @@ int main()
 		deltaTime = currentFrame - lastFrame;
 		lastFrame = currentFrame;
 
+		double currentTime = glfwGetTime();
+		frames++;
+		if (currentTime - lastTime >= 1.0)
+		{ // If last prinf() was more than 1 sec ago
+		  // printf and reset timer
+			std::cout << frames << std::endl;
+			frames = 0;
+			lastTime += 1.0;
+		}
+
 		glfwPollEvents();
 		doMovement();
-
-		//realtime perlin noise
-		for (double x = 0; x < platformWidth; x++)
-		{//Loops to loop trough all the pixels
-			for (double y = 0; y < platformLength; y++)
-			{
-				double getnoise = 0;
-				getnoise = p->OctavePerlin(x / 30, y / 30, 0, octaves, persistence, lacunarity, scale);
-				noise[(int)x][(int)y] = (int)(getnoise * 50);
-			}
-		}
 
 		//render and clear the color buffer
 		glClearColor(0.2f, 0.3f, 0.5f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+		//activate first shader
+		//shader must be activated before uniforms are filled with data
+		cubeShader.Use();
+
 
 		glm::mat4 view;
 		view = camera.getViewMatrix();
@@ -202,18 +275,20 @@ int main()
 		projection = glm::perspective(45.0f, (GLfloat) WIDTH / (GLfloat) HEIGHT, 0.1f, 100.0f);
 
 		//get the locations of the uniforms
-		GLuint modelLoc = glGetUniformLocation(myShader.Program, "model");
-		GLuint viewLoc = glGetUniformLocation(myShader.Program, "view");
-		GLuint projectionLoc = glGetUniformLocation(myShader.Program, "projection");
-		GLuint vertexColorLocation = glGetUniformLocation(myShader.Program, "ourColor");
-
-		glBindVertexArray(VAO);
-		//activate first shader
-		//shader must be activated before uniforms are filled with data
-		myShader.Use();
-
+		GLuint modelLoc = glGetUniformLocation(cubeShader.Program, "model");
+		GLuint viewLoc = glGetUniformLocation(cubeShader.Program, "view");
+		GLuint projectionLoc = glGetUniformLocation(cubeShader.Program, "projection");
 		glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
 		glUniformMatrix4fv(projectionLoc, 1, GL_FALSE, glm::value_ptr(projection));
+
+		GLint objectColorLoc = glGetUniformLocation(cubeShader.Program, "objectColor");
+		GLint lightColorLoc = glGetUniformLocation(cubeShader.Program, "lightColor");
+		GLint lightPosLoc = glGetUniformLocation(cubeShader.Program, "lightPos");
+		glUniform3f(objectColorLoc, 0.2f, 0.8f, 0.31f);
+		glUniform3f(lightColorLoc, 1.0f, 1.0f, 1.0f);
+		glUniform3f(lightPosLoc, lightPos.x, lightPos.y, lightPos.z);
+		
+		glBindVertexArray(VAO);
 
 		/*Scale first
 		  Translate seconds
@@ -224,28 +299,45 @@ int main()
 		{
 			for (int z = 0; z < platformLength; z++)
 			{
-				for (double y = 0; y <= noise[x][z]; y+= 1.0)
+				for (int y = 0; y <= noise[x][z]; y++)
 				{
-					if (!(x > 0 && x < platformWidth -1 && z > 0 && z < platformLength - 1) || y >= (int) noise[x][z] - 3)
-					{
-						glm::mat4 model;
-						model = glm::translate(model, Vector3((GLfloat)x, (GLfloat)y, (GLfloat)z));
-						glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
-						glDrawElements(GL_TRIANGLE_FAN, sizeof(vertices) / sizeof(vertices[0]), GL_UNSIGNED_INT, nullptr);
-						glUniform4f(vertexColorLocation, 0.112f, 0.128f, 0.144f, 1.0f);
-						glLineWidth(3.0f);
-						glDrawElements(GL_LINE_LOOP, sizeof(vertices) / sizeof(vertices[0]), GL_UNSIGNED_INT, nullptr);
-						glUniform4f(vertexColorLocation, 0.2f, 0.6f, 0.2f, 1.0f);
-					}
+					glm::mat4 model;
+					model = glm::translate(model, Vector3((GLfloat)x, (GLfloat) y, (GLfloat)z));
+					glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+					GLuint query;
+					glGenQueries(1, &query);
+					glBeginConditionalRender(query, GL_QUERY_WAIT);
+					glDrawElements(GL_TRIANGLES, sizeof(vertices) / sizeof(vertices[0]), GL_UNSIGNED_INT, nullptr);
+					glEndConditionalRender();
 				}
 			}
 		}
-
 		glBindVertexArray(0);
+
+		lampShader.Use();
+		// Get location objects for the matrices on the lamp shader (these could be different on a different shader)
+		modelLoc = glGetUniformLocation(lampShader.Program, "model");
+		viewLoc = glGetUniformLocation(lampShader.Program, "view");
+		projectionLoc = glGetUniformLocation(lampShader.Program, "projection");
+		// Set matrices
+		glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
+		glUniformMatrix4fv(projectionLoc, 1, GL_FALSE, glm::value_ptr(projection));
+		glm::mat4 model;
+		model = glm::mat4();
+		model = glm::translate(model, lightPos);
+		model = glm::scale(model, glm::vec3(0.2f)); // Make it a smaller cube
+		glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+		// Draw the light object (using light's vertex attributes)
+		glBindVertexArray(lightVAO);
+		glDrawElements(GL_TRIANGLE_FAN, sizeof(vertices) / sizeof(vertices[0]), GL_UNSIGNED_INT, nullptr);
+		glBindVertexArray(0);
+
 		glfwSwapBuffers(window);
 	}
 	glDeleteVertexArrays(1, &VAO);
+	glDeleteVertexArrays(1, &lightVAO);
 	glDeleteBuffers(1, &VBO);
+	glDeleteBuffers(1, &VBON);
 	glDeleteBuffers(1, &EBO);
 	glfwTerminate();
 	return 0;
@@ -311,6 +403,7 @@ void doMovement()
 		camera.reset();
 	if (keys[GLFW_KEY_UP])
 	{
+		lightPos += Vector3(0.0f, 1.0f, 0.0f) * 5.0f * deltaTime;
 		if (oct)
 			octaves++;
 		if (pers)
@@ -322,6 +415,7 @@ void doMovement()
 	}
 	else if (keys[GLFW_KEY_DOWN])
 	{
+		lightPos += Vector3(0.0f, -1.0f, 0.0f) * 5.0f * deltaTime;
 		if (oct)
 			octaves--;
 		if (pers)
@@ -331,4 +425,12 @@ void doMovement()
 		if (scl)
 			scale -= 0.5;
 	}
+	if (keys[GLFW_KEY_LEFT])
+		lightPos += Vector3(-1.0f, 0.0f, 0.0f) * 5.0f * deltaTime;
+	if (keys[GLFW_KEY_RIGHT])
+		lightPos -= Vector3(-1.0f, 0.0f, 0.0f) * 5.0f * deltaTime;
+	if (keys[GLFW_KEY_F])
+		lightPos += Vector3(0.0f, 0.0f, -1.0f) * 5.0f * deltaTime;
+	if (keys[GLFW_KEY_B])
+		lightPos -= Vector3(0.0f, 0.0f, -1.0f) * 5.0f * deltaTime;
 }
