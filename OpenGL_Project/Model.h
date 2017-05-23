@@ -14,17 +14,18 @@ public:
 	void bind();
 	void unbind();
 	GLuint getVertexCount();
+	GLuint getNormalCount();
 	GLuint getIndexCount();
 
 private:
-	void addVBO();
+	void addVBO(std::vector<GLfloat> data);
 	void addEBO();
-	void addVAO();
 
 	std::vector<GLfloat> vertices;
-	std::vector<GLuint> indices;
+	std::vector<GLfloat> normals;
+	std::vector<GLuint>  indices;
 
-	GLuint vertexCount =  0, indexCount = 0;
-	GLuint VBO, VAO, EBO;
+	std::vector<GLuint> VBOS;
+	GLuint VAO, EBO;
 };
 

@@ -2,97 +2,92 @@
 
 
 
-Model::Model(const GLchar* modelpath)
+Model::Model(const GLchar* modelPath)
 {
-	//read vertices and indices from file
-	/*
-	std::ifstream inFile;
-	inFile.open(modelpath);
-	if (inFile.fail())
+	std::fstream myfile;
+	myfile.open(modelPath);
+
+	bool vertex = false;
+	bool normal = false;
+	bool index = false;
+
+	std::string line;
+	while (std::getline(myfile, line))
 	{
-		std::cerr << "Error opening file" << std::endl;
+		std::istringstream in_floats(line);
+		std::istringstream in_string(line);
+
+		std::string line;
+		in_string >> line;
+		if (line == "vertices")
+		{
+			vertex = true;
+			normal = false;
+			index  = false;
+		}
+		else if (line == "normals")
+		{
+			vertex = false;
+			normal = true;
+			index  = false;
+		}
+		else if (line == "indices")
+		{
+			vertex = false;
+			normal = false;
+			index  = true;
+		} 
+		else if (vertex)
+		{
+			GLfloat x, y, z;
+			in_floats >> x >> y >> z;
+			vertices.push_back(x);
+			vertices.push_back(y);
+			vertices.push_back(z);
+		}
+		else if (normal)
+		{
+			GLfloat x, y, z;
+			in_floats >> x >> y >> z;
+			normals.push_back(x);
+			normals.push_back(y);
+			normals.push_back(z);
+		}
+		else if (index)
+		{
+			GLuint x, y, z;
+			in_floats >> x >> y >> z;
+			indices.push_back(x);
+			indices.push_back(y);
+			indices.push_back(z);
+		}
 	}
-	*/
+	vertices.shrink_to_fit();
+	normals.shrink_to_fit();
+	indices.shrink_to_fit();
 
-	vertices = {
-		//back
-		0.5f, -0.5f, -0.5f,
-		-0.5f, -0.5f, -0.5f,
-		-0.5f,  0.5f, -0.5f,
-		0.5f,  0.5f, -0.5f,
-
-		//right
-		0.5f, -0.5f,  0.5f,
-		0.5f, -0.5f, -0.5f,
-		0.5f,  0.5f, -0.5f,
-		0.5f,  0.5f,  0.5f,
-
-		//front
-		-0.5f, -0.5f,  0.5f,
-		0.5f, -0.5f,  0.5f,
-		0.5f,  0.5f,  0.5f,
-		-0.5f,  0.5f,  0.5f,
-
-		//left
-		-0.5f, -0.5f, -0.5f,
-		-0.5f, -0.5f,  0.5f,
-		-0.5f,  0.5f,  0.5f,
-		-0.5f,  0.5f, -0.5f,
-
-		//top
-		-0.5f,  0.5f,  0.5f,
-		0.5f,  0.5f,  0.5f,
-		0.5f,  0.5f, -0.5f,
-		-0.5f,  0.5f, -0.5f,
-
-		//bottom
-		-0.5f, -0.5f, -0.5f,	//front left - 16
-		0.5f, -0.5f, -0.5f,	//front right - 17
-		0.5f, -0.5f,  0.5f,	//back right - 18
-		-0.5f, -0.5f,  0.5f		//back left - 19
-	};
-
-
-	indices = {
-		//back
-		0, 1, 2,
-		2, 3, 0,
-
-		//front
-		4, 5, 6,
-		6, 7, 4,
-
-		//left
-		8, 9, 10,
-		10, 11, 8,
-
-		//right
-		12, 13, 14,
-		14, 15, 12,
-
-		//bottom
-		16, 17, 18,
-		18, 19, 16,
-
-		//top
-		20, 21, 22,
-		22, 23, 20
-	};
-
-	//generating VAOs
 	glGenVertexArrays(1, &VAO);
 	bind();
-	addVBO();
+	addVBO(vertices);
 	addEBO();
-	addVAO();
+	// Position attribute
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (GLvoid*)0);
+	glEnableVertexAttribArray(0);
+	
+	if (!normals.empty())
+	{
+		addVBO(normals);
+		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (GLvoid*)0);
+		glEnableVertexAttribArray(1);
+	}
 	unbind();
 }
 
 
 Model::~Model()
 {
+	glDeleteBuffers((GLsizei) VBOS.size(), VBOS.data());
 	glDeleteVertexArrays(1, &VAO);
-	glDeleteBuffers(1, &VBO);
 	glDeleteBuffers(1, &EBO);
 }
 
@@ -103,41 +98,36 @@ void Model::bind()
 
 void Model::unbind()
 {
-	//unbind GL_ARRAY_BUFFER
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glBindVertexArray(0);
 }
 
 GLuint Model::getVertexCount()
 {
-	vertexCount = vertices.size();
-	return vertexCount;
+	return (GLuint) vertices.size();
+}
+
+GLuint Model::getNormalCount()
+{
+	return (GLuint) normals.size();
 }
 
 GLuint Model::getIndexCount()
 {
-	indexCount = indices.size();
-	return indexCount;
+	return (GLuint) indices.size();
 }
 
-void Model::addVBO()
+void Model::addVBO(std::vector<GLfloat> data)
 {
-	//generating VBOs
+	GLuint VBO;
+	VBOS.push_back(VBO);
 	glGenBuffers(1, &VBO);
 	glBindBuffer(GL_ARRAY_BUFFER, VBO);
-	glBufferData(GL_ARRAY_BUFFER, this->vertexCount, vertices.data(), GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, data.size() * sizeof(data[0]), data.data(), GL_STATIC_DRAW);
 }
 
 void Model::addEBO()
 {
-	//generating EBOs
 	glGenBuffers(1, &EBO);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, this->indexCount, indices.data(), GL_STATIC_DRAW);
-}
-
-void Model::addVAO()
-{
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (GLvoid*)0);
-	glEnableVertexAttribArray(0);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(indices[0]), indices.data(), GL_STATIC_DRAW);
 }

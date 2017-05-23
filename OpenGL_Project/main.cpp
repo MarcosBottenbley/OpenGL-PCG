@@ -16,6 +16,7 @@
 #include "Shader.h"
 #include "Camera.h"
 #include "Perlin.h"
+#include "Model.h"
 
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode);
 void cursor_position_callback(GLFWwindow* window, double xpos, double ypos);
@@ -81,112 +82,17 @@ int main()
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_CULL_FACE);
 	glCullFace(GL_BACK);
+	glDisable(GL_BLEND);
 
 	Shader cubeShader("Shaders/vertexShader.glsl","Shaders/blockFragmentShader.glsl");
 	Shader lampShader("Shaders/vertexShader.glsl", "Shaders/lampFragmentShader.glsl");
-
-	GLfloat vertices[] = {
-		//back
-		 0.5f, -0.5f, -0.5f,
-		-0.5f, -0.5f, -0.5f,
-		-0.5f,  0.5f, -0.5f,
-		 0.5f,  0.5f, -0.5f,
-
-		//right
-		0.5f, -0.5f,  0.5f,
-		0.5f, -0.5f, -0.5f,
-		0.5f,  0.5f, -0.5f,
-		0.5f,  0.5f,  0.5f,
-
-		//front
-		-0.5f, -0.5f,  0.5f,
-		 0.5f, -0.5f,  0.5f,
-		 0.5f,  0.5f,  0.5f,
-		-0.5f,  0.5f,  0.5f,
-
-		//left
-		-0.5f, -0.5f, -0.5f,
-		-0.5f, -0.5f,  0.5f,
-		-0.5f,  0.5f,  0.5f,
-		-0.5f,  0.5f, -0.5f,
-
-		//top
-		-0.5f,  0.5f,  0.5f,
-		 0.5f,  0.5f,  0.5f,
-		 0.5f,  0.5f, -0.5f,
-		-0.5f,  0.5f, -0.5f,
-
-		//bottom
-		-0.5f, -0.5f, -0.5f,
-		 0.5f, -0.5f, -0.5f,
-		 0.5f, -0.5f,  0.5f,
-		-0.5f, -0.5f,  0.5f
-	};
-
-	GLfloat normals[] = {
-		//back
-		 0.0f,  0.0f, -1.0f,
-		 0.0f,  0.0f, -1.0f,
-		 0.0f,  0.0f, -1.0f,
-		 0.0f,  0.0f, -1.0f,
-
-		//right
-		1.0f,  0.0f,  0.0f,
-		1.0f,  0.0f,  0.0f,
-		1.0f,  0.0f,  0.0f,
-		1.0f,  0.0f,  0.0f,
-
-		//front
-		 0.0f,  0.0f,  1.0f,
-		 0.0f,  0.0f,  1.0f,
-		 0.0f,  0.0f,  1.0f,
-		 0.0f,  0.0f,  1.0f,
-
-		//left
-		-1.0f,  0.0f,  0.0f,
-		-1.0f,  0.0f,  0.0f,
-		-1.0f,  0.0f,  0.0f,
-		-1.0f,  0.0f,  0.0f,
-
-		//top
-		 0.0f,  1.0f,  0.0f,
-		 0.0f,  1.0f,  0.0f,
-		 0.0f,  1.0f,  0.0f,
-		 0.0f,  1.0f,  0.0f,
-
-		//bottom
-		 0.0f, -1.0f,  0.0f,
-		 0.0f, -1.0f,  0.0f,
-		 0.0f, -1.0f,  0.0f,
-		 0.0f, -1.0f,  0.0f
-	};
-
-	GLuint indices[] = {
-		0, 1, 2,
-		2, 3, 0,
-
-		4, 5, 6,
-		6, 7, 4,
-
-		8, 9, 10,
-		10, 11, 8,
-
-		12, 13, 14,
-		14, 15, 12,
-
-		16, 17, 18,
-		18, 19, 16,
-
-		20, 21, 22,
-		22, 23, 20
-	};
 
 	const int platformWidth = 16, platformLength = 16;
 	Perlin* p = new Perlin();
 	double noise[platformWidth][platformLength];
 
 	for (double x = 0; x < platformWidth; x++)
-	{//Loops to loop trough all the pixels
+	{
 		for (double y = 0; y < platformLength; y++)
 		{
 			double getnoise = 0;
@@ -195,46 +101,8 @@ int main()
 		}
 	}
 
-	// First, set the container's VAO (and VBO)
-	GLuint VBO, VBON, VAO, EBO;
-	glGenVertexArrays(1, &VAO);
-	glGenBuffers(1, &VBO);
-	glGenBuffers(1, &VBON);
-	glGenBuffers(1, &EBO);
-
-	glBindVertexArray(VAO);
-
-	glBindBuffer(GL_ARRAY_BUFFER, VBO);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-
-
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
-
-	// Position attribute
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (GLvoid*)0);
-	glEnableVertexAttribArray(0);
-
-	// Normal attribute
-	glBindBuffer(GL_ARRAY_BUFFER, VBON);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(normals), normals, GL_STATIC_DRAW);
-
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (GLvoid*)0);
-	glEnableVertexAttribArray(1);
-	glBindVertexArray(0);
-
-	// Then, we set the light's VAO (VBO stays the same. After all, the vertices are the same for the light object (also a 3D cube))
-	GLuint lightVAO;
-	glGenVertexArrays(1, &lightVAO);
-	glBindVertexArray(lightVAO);
-	// We only need to bind to the VBO (to link it with glVertexAttribPointer), no need to fill it; the VBO's data already contains all we need.
-	glBindBuffer(GL_ARRAY_BUFFER, VBO);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-
-	// Set the vertex attributes (only position data for the lamp))
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (GLvoid*)0); // Note that we skip over the normal vectors
-	glEnableVertexAttribArray(0);
-	glBindVertexArray(0);
+	Model block("Models/block.model");
+	Model light("Models/light.model");
 
 	double lastTime = glfwGetTime();
 	int frames = 0;
@@ -248,8 +116,7 @@ int main()
 		double currentTime = glfwGetTime();
 		frames++;
 		if (currentTime - lastTime >= 1.0)
-		{ // If last prinf() was more than 1 sec ago
-		  // printf and reset timer
+		{
 			std::cout << frames << std::endl;
 			frames = 0;
 			lastTime += 1.0;
@@ -288,7 +155,7 @@ int main()
 		glUniform3f(lightColorLoc, 1.0f, 1.0f, 1.0f);
 		glUniform3f(lightPosLoc, lightPos.x, lightPos.y, lightPos.z);
 		
-		glBindVertexArray(VAO);
+		block.bind();
 
 		/*Scale first
 		  Translate seconds
@@ -307,12 +174,12 @@ int main()
 					GLuint query;
 					glGenQueries(1, &query);
 					glBeginConditionalRender(query, GL_QUERY_WAIT);
-					glDrawElements(GL_TRIANGLES, sizeof(vertices) / sizeof(vertices[0]), GL_UNSIGNED_INT, nullptr);
+					glDrawElements(GL_TRIANGLES, block.getVertexCount(), GL_UNSIGNED_INT, nullptr);
 					glEndConditionalRender();
 				}
 			}
 		}
-		glBindVertexArray(0);
+		block.unbind();
 
 		lampShader.Use();
 		// Get location objects for the matrices on the lamp shader (these could be different on a different shader)
@@ -328,17 +195,12 @@ int main()
 		model = glm::scale(model, glm::vec3(0.2f)); // Make it a smaller cube
 		glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
 		// Draw the light object (using light's vertex attributes)
-		glBindVertexArray(lightVAO);
-		glDrawElements(GL_TRIANGLE_FAN, sizeof(vertices) / sizeof(vertices[0]), GL_UNSIGNED_INT, nullptr);
-		glBindVertexArray(0);
+		light.bind();
+		glDrawElements(GL_TRIANGLES, light.getVertexCount(), GL_UNSIGNED_INT, nullptr);
+		light.unbind();
 
 		glfwSwapBuffers(window);
 	}
-	glDeleteVertexArrays(1, &VAO);
-	glDeleteVertexArrays(1, &lightVAO);
-	glDeleteBuffers(1, &VBO);
-	glDeleteBuffers(1, &VBON);
-	glDeleteBuffers(1, &EBO);
 	glfwTerminate();
 	return 0;
 }
