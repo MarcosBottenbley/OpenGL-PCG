@@ -21,6 +21,8 @@ public:
 	void rotateCamera(GLfloat xoffset, GLfloat yoffset);
 	void moveCamera(Movement_Direction direction, GLfloat dt);
 	Matrix4 getViewMatrix();
+	GLfloat getX();
+	GLfloat getZ();
 	void reset();
 
 private:

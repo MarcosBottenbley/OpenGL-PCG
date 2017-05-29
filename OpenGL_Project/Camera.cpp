@@ -55,6 +55,16 @@ Matrix4 Camera::getViewMatrix()
 	return glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
 }
 
+GLfloat Camera::getX()
+{
+	return cameraPos.x;
+}
+
+GLfloat Camera::getZ()
+{
+	return cameraPos.z;
+}
+
 void Camera::reset()
 {
 	cameraPos = Vector3(0.0f, 0.0f, 0.0f);

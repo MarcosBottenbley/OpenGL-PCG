@@ -23,6 +23,7 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Model.cpp" />
     <ClCompile Include="Perlin.cpp" />
+    <ClCompile Include="Renderer.cpp" />
     <ClCompile Include="Shader.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -30,6 +31,7 @@
     <ClInclude Include="Glm_Common.h" />
     <ClInclude Include="Model.h" />
     <ClInclude Include="Perlin.h" />
+    <ClInclude Include="Renderer.h" />
     <ClInclude Include="Shader.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">

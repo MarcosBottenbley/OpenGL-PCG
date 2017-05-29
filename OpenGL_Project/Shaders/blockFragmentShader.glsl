@@ -3,10 +3,12 @@ out vec4 color;
   
 in vec3 Normal;  
 in vec3 FragPos;  
-  
+in float visibility;
+
 uniform vec3 lightPos; 
 uniform vec3 lightColor;
 uniform vec3 objectColor;
+uniform vec4 skyColor;
 
 float near = 1.0; 
 float far  = 100.0; 
@@ -22,7 +24,7 @@ void main()
 	float depth = LinearizeDepth(gl_FragCoord.z) / far;
 
     // Ambient
-    float ambientStrength = 0.1f;
+    float ambientStrength = 0.2;
     vec3 ambient = ambientStrength * lightColor;
 
     // Diffuse 
@@ -33,4 +35,5 @@ void main()
 
     vec3 result = (ambient + diffuse) * objectColor - (depth / 2);
     color = vec4(result, 1.0f);
+    color = mix(skyColor, color, visibility);
 } 

@@ -11,6 +11,8 @@
 //other std libraries
 #include <iostream>
 #include <math.h>
+#include <Windows.h>
+#include <vector>
 
 //custom .h files
 #include "Shader.h"
@@ -18,12 +20,17 @@
 #include "Perlin.h"
 #include "Model.h"
 
+extern "C"
+{
+	_declspec(dllexport) DWORD NvOptimusEnablement = 0x00000001;
+}
+
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode);
 void cursor_position_callback(GLFWwindow* window, double xpos, double ypos);
 
 void doMovement();
 
-const GLuint WIDTH = 1024, HEIGHT = 760;
+const GLuint WIDTH = 1920, HEIGHT = 1080;
 
 GLfloat lastX = WIDTH / 2.0, lastY = HEIGHT / 2.0;
 
@@ -35,12 +42,12 @@ GLfloat lastFrame = 0.0f;
 Camera camera(Vector3(0.0f, 0.0f, 10.0f));
 
 // Light attributes
-glm::vec3 lightPos(1.2f, 50.0f, 2.0f);
+glm::vec3 lightPos(camera.getX(), 50.0f, camera.getZ());
 
-int octaves = 4;
-double persistence = 20;
-double lacunarity = 3;
-double scale = 10.0;
+int octaves = 6;
+double persistence = 0.25;
+double lacunarity = 2.0;
+double scale = 1.0;
 
 GLFWwindow* window;
 
@@ -52,7 +59,7 @@ void init()
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 	glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
 
-	window = glfwCreateWindow(WIDTH, HEIGHT, "LearnOpenGL", nullptr, nullptr);
+	window = glfwCreateWindow(WIDTH, HEIGHT, "LearnOpenGL", glfwGetPrimaryMonitor(), nullptr);
 	if (window == nullptr)
 	{
 		std::cout << "Failed to initilize GLFW" << std::endl;
@@ -73,39 +80,56 @@ void init()
 	}
 
 	glViewport(0, 0, WIDTH, HEIGHT);
+	std::cout << glGetString(GL_RENDERER) << std::endl;
 }
 
 int main()
 {
-	init();
 
-	glEnable(GL_DEPTH_TEST);
-	glEnable(GL_CULL_FACE);
-	glCullFace(GL_BACK);
-	glDisable(GL_BLEND);
+	init();
 
 	Shader cubeShader("Shaders/vertexShader.glsl","Shaders/blockFragmentShader.glsl");
 	Shader lampShader("Shaders/vertexShader.glsl", "Shaders/lampFragmentShader.glsl");
-
-	const int platformWidth = 16, platformLength = 16;
-	Perlin* p = new Perlin();
-	double noise[platformWidth][platformLength];
-
-	for (double x = 0; x < platformWidth; x++)
-	{
-		for (double y = 0; y < platformLength; y++)
-		{
-			double getnoise = 0;
-			getnoise = p->OctavePerlin(x / 30, y / 30, 0, octaves, persistence, lacunarity, scale);
-			noise[(int)x][(int)y] = (int)(getnoise * 16);
-		}
-	}
 
 	Model block("Models/block.model");
 	Model light("Models/light.model");
 
 	double lastTime = glfwGetTime();
 	int frames = 0;
+
+	//get the locations of the uniforms
+	GLuint modelLoc = glGetUniformLocation(cubeShader.Program, "model");
+	GLuint viewLoc = glGetUniformLocation(cubeShader.Program, "view");
+	GLuint projectionLoc = glGetUniformLocation(cubeShader.Program, "projection");
+
+	// Get location objects for the matrices on the lamp shader (these could be different on a different shader)
+	GLuint lampModelLoc = glGetUniformLocation(lampShader.Program, "model");
+	GLuint lampViewLoc = glGetUniformLocation(lampShader.Program, "view");
+	GLuint lampProjectionLoc = glGetUniformLocation(lampShader.Program, "projection");
+
+	GLint objectColorLoc = glGetUniformLocation(cubeShader.Program, "objectColor");
+	GLint lightColorLoc = glGetUniformLocation(cubeShader.Program, "lightColor");
+	GLint lightPosLoc = glGetUniformLocation(cubeShader.Program, "lightPos");
+
+	//for fog
+	GLint skyColorLoc = glGetUniformLocation(cubeShader.Program, "skyColor");
+
+	glm::mat4 projection;
+	projection = glm::perspective(45.0f, (GLfloat)WIDTH / (GLfloat)HEIGHT, 0.1f, 255.0f);
+
+
+	const int chunkSize = 50;
+	const int chunkHeight = 16;
+	Perlin* p = new Perlin();
+
+	int chunksX = 3;
+	int chunksY = 3;
+
+	std::vector<std::vector<Vector3>> terrainChunks;
+
+	glEnable(GL_DEPTH_TEST);
+	glEnable(GL_CULL_FACE);
+	glCullFace(GL_BACK);
 
 	while (!glfwWindowShouldClose(window))
 	{
@@ -125,8 +149,28 @@ int main()
 		glfwPollEvents();
 		doMovement();
 
+		
+		for (int cx = (camera.getX() - (chunkSize + chunksX) /2); cx < chunksX + (camera.getX() - (chunkSize + chunksX) / 2); cx++)
+		{
+			for (int cy = (camera.getZ() - (chunkSize + chunksY) /2); cy < chunksY + (camera.getZ() - (chunkSize + chunksY) / 2); cy++)
+			{
+				std::vector<Vector3> terrainVectors;
+				for (double r = cx; r < chunkSize + cx; r++)
+				{
+					for (double c = cy; c < chunkSize + cy; c++)
+					{
+						double getnoise = 0;
+						getnoise = p->OctavePerlin(abs(r) / 30, abs(c) / 30, 0, octaves, persistence, lacunarity, scale);
+						terrainVectors.push_back(Vector3((GLfloat)r, (GLfloat)getnoise * chunkHeight, (GLfloat)c));
+					}
+				}
+				terrainChunks.push_back(terrainVectors);
+			}
+		}
+
+		Vector4 skyColor = Vector4(0.2f, 0.3f, 0.5f, 1.0f);
 		//render and clear the color buffer
-		glClearColor(0.2f, 0.3f, 0.5f, 1.0f);
+		glClearColor(skyColor.x, skyColor.y, skyColor.z, skyColor.w);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
@@ -134,23 +178,13 @@ int main()
 		//shader must be activated before uniforms are filled with data
 		cubeShader.Use();
 
+		glUniform4f(skyColorLoc, skyColor.x, skyColor.y, skyColor.z, skyColor.w);
 
 		glm::mat4 view;
 		view = camera.getViewMatrix();
-
-		glm::mat4 projection;
-		projection = glm::perspective(45.0f, (GLfloat) WIDTH / (GLfloat) HEIGHT, 0.1f, 100.0f);
-
-		//get the locations of the uniforms
-		GLuint modelLoc = glGetUniformLocation(cubeShader.Program, "model");
-		GLuint viewLoc = glGetUniformLocation(cubeShader.Program, "view");
-		GLuint projectionLoc = glGetUniformLocation(cubeShader.Program, "projection");
 		glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
 		glUniformMatrix4fv(projectionLoc, 1, GL_FALSE, glm::value_ptr(projection));
-
-		GLint objectColorLoc = glGetUniformLocation(cubeShader.Program, "objectColor");
-		GLint lightColorLoc = glGetUniformLocation(cubeShader.Program, "lightColor");
-		GLint lightPosLoc = glGetUniformLocation(cubeShader.Program, "lightPos");
+		
 		glUniform3f(objectColorLoc, 0.2f, 0.8f, 0.31f);
 		glUniform3f(lightColorLoc, 1.0f, 1.0f, 1.0f);
 		glUniform3f(lightPosLoc, lightPos.x, lightPos.y, lightPos.z);
@@ -160,40 +194,30 @@ int main()
 		/*Scale first
 		  Translate seconds
 		  Rotate last
-		  This order keeps openGl from doing weird things
-		*/
-		for (int x = 0; x < platformWidth; x++)
+		  This order keeps openGl from doing weird things*/
+		for (int x = 0; x < terrainChunks.size(); x++)
 		{
-			for (int z = 0; z < platformLength; z++)
+			for (int y = 0; y < terrainChunks[x].size(); y++)
 			{
-				for (int y = 0; y <= noise[x][z]; y++)
-				{
-					glm::mat4 model;
-					model = glm::translate(model, Vector3((GLfloat)x, (GLfloat) y, (GLfloat)z));
-					glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
-					GLuint query;
-					glGenQueries(1, &query);
-					glBeginConditionalRender(query, GL_QUERY_WAIT);
-					glDrawElements(GL_TRIANGLES, block.getVertexCount(), GL_UNSIGNED_INT, nullptr);
-					glEndConditionalRender();
-				}
+				glm::mat4 model;
+				model = glm::translate(model, terrainChunks[x][y]);
+				glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+
+				glDrawElements(GL_TRIANGLES, block.getVertexCount(), GL_UNSIGNED_INT, nullptr);
 			}
 		}
+		terrainChunks.clear();
 		block.unbind();
 
 		lampShader.Use();
-		// Get location objects for the matrices on the lamp shader (these could be different on a different shader)
-		modelLoc = glGetUniformLocation(lampShader.Program, "model");
-		viewLoc = glGetUniformLocation(lampShader.Program, "view");
-		projectionLoc = glGetUniformLocation(lampShader.Program, "projection");
 		// Set matrices
-		glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
-		glUniformMatrix4fv(projectionLoc, 1, GL_FALSE, glm::value_ptr(projection));
+		glUniformMatrix4fv(lampViewLoc, 1, GL_FALSE, glm::value_ptr(view));
+		glUniformMatrix4fv(lampProjectionLoc, 1, GL_FALSE, glm::value_ptr(projection));
 		glm::mat4 model;
 		model = glm::mat4();
 		model = glm::translate(model, lightPos);
 		model = glm::scale(model, glm::vec3(0.2f)); // Make it a smaller cube
-		glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+		glUniformMatrix4fv(lampModelLoc, 1, GL_FALSE, glm::value_ptr(model));
 		// Draw the light object (using light's vertex attributes)
 		light.bind();
 		glDrawElements(GL_TRIANGLES, light.getVertexCount(), GL_UNSIGNED_INT, nullptr);
@@ -202,6 +226,7 @@ int main()
 		glfwSwapBuffers(window);
 	}
 	glfwTerminate();
+	delete p;
 	return 0;
 }
 
@@ -248,6 +273,7 @@ void cursor_position_callback(GLFWwindow * window, double xpos, double ypos)
 
 void doMovement()
 {
+	lightPos = Vector3(camera.getX(), 50.0f, camera.getZ());
 	bool oct = keys[GLFW_KEY_O];
 	bool pers = keys[GLFW_KEY_P];
 	bool lac = keys[GLFW_KEY_L];
