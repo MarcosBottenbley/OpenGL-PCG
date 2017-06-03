@@ -20,6 +20,7 @@
 #include "Perlin.h"
 #include "Model.h"
 
+//forces opengl to use the dedicated graphics card
 extern "C"
 {
 	_declspec(dllexport) DWORD NvOptimusEnablement = 0x00000001;
