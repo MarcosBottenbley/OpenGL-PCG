@@ -179,6 +179,7 @@ int main()
 		//shader must be activated before uniforms are filled with data
 		cubeShader.Use();
 
+		//comment to test git stuff
 		glUniform4f(skyColorLoc, skyColor.x, skyColor.y, skyColor.z, skyColor.w);
 
 		glm::mat4 view;
