@@ -4,6 +4,7 @@
 #include <fstream>
 #include <sstream>
 #include <iostream>
+#include <vector>
 
 #include <GL\glew.h>
 
@@ -15,6 +16,13 @@ public:
 
 	GLuint Program;
 	void Use();
+	std::vector<std::string>& GetUniformNames();
 private:
-	void compileShaders(const GLchar* vShaderCode, const GLchar* fShaderCode);
+	//vars
+	const GLchar * vertexPath = nullptr;
+	const GLchar * fragmentPath = nullptr;
+
+	//methods
+	void ReadFiles(std::string& vertexCode, std::string& fragmentCode);
+	void CompileShaders(const GLchar* vShaderCode, const GLchar* fShaderCode);
 };

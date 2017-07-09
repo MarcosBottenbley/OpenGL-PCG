@@ -60,7 +60,7 @@ void init()
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 	glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
 
-	window = glfwCreateWindow(WIDTH, HEIGHT, "LearnOpenGL", glfwGetPrimaryMonitor(), nullptr);
+	window = glfwCreateWindow(WIDTH, HEIGHT, "Simulation", glfwGetPrimaryMonitor(), nullptr);
 	if (window == nullptr)
 	{
 		std::cout << "Failed to initilize GLFW" << std::endl;
@@ -92,7 +92,7 @@ int main()
 	Shader cubeShader("Shaders/vertexShader.glsl","Shaders/blockFragmentShader.glsl");
 	Shader lampShader("Shaders/vertexShader.glsl", "Shaders/lampFragmentShader.glsl");
 
-	Model block("Models/block.model");
+	Model block("Models/block2.model");
 	Model light("Models/light.model");
 
 	double lastTime = glfwGetTime();
@@ -115,11 +115,11 @@ int main()
 	//for fog
 	GLint skyColorLoc = glGetUniformLocation(cubeShader.Program, "skyColor");
 
-	glm::mat4 projection;
+	Matrix4 projection;
 	projection = glm::perspective(45.0f, (GLfloat)WIDTH / (GLfloat)HEIGHT, 0.1f, 255.0f);
 
 
-	const int chunkSize = 50;
+	const int chunkSize = 30;
 	const int chunkHeight = 16;
 	Perlin* p = new Perlin();
 
@@ -129,8 +129,8 @@ int main()
 	std::vector<std::vector<Vector3>> terrainChunks;
 
 	glEnable(GL_DEPTH_TEST);
-	glEnable(GL_CULL_FACE);
-	glCullFace(GL_BACK);
+	//glEnable(GL_CULL_FACE);
+	glCullFace(GL_FRONT);
 
 	while (!glfwWindowShouldClose(window))
 	{
@@ -150,7 +150,6 @@ int main()
 		glfwPollEvents();
 		doMovement();
 
-		
 		for (int cx = (camera.getX() - (chunkSize + chunksX) /2); cx < chunksX + (camera.getX() - (chunkSize + chunksX) / 2); cx++)
 		{
 			for (int cy = (camera.getZ() - (chunkSize + chunksY) /2); cy < chunksY + (camera.getZ() - (chunkSize + chunksY) / 2); cy++)
@@ -182,7 +181,7 @@ int main()
 		//comment to test git stuff
 		glUniform4f(skyColorLoc, skyColor.x, skyColor.y, skyColor.z, skyColor.w);
 
-		glm::mat4 view;
+		Matrix4 view;
 		view = camera.getViewMatrix();
 		glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
 		glUniformMatrix4fv(projectionLoc, 1, GL_FALSE, glm::value_ptr(projection));
@@ -201,11 +200,11 @@ int main()
 		{
 			for (int y = 0; y < terrainChunks[x].size(); y++)
 			{
-				glm::mat4 model;
+				Matrix4 model;
 				model = glm::translate(model, terrainChunks[x][y]);
 				glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
 
-				glDrawElements(GL_TRIANGLES, block.getVertexCount(), GL_UNSIGNED_INT, nullptr);
+				glDrawElements(GL_TRIANGLES, block.getIndexCount(), GL_UNSIGNED_INT, nullptr);
 			}
 		}
 		terrainChunks.clear();
@@ -215,20 +214,19 @@ int main()
 		// Set matrices
 		glUniformMatrix4fv(lampViewLoc, 1, GL_FALSE, glm::value_ptr(view));
 		glUniformMatrix4fv(lampProjectionLoc, 1, GL_FALSE, glm::value_ptr(projection));
-		glm::mat4 model;
+		Matrix4 model;
 		model = glm::mat4();
 		model = glm::translate(model, lightPos);
 		model = glm::scale(model, glm::vec3(0.2f)); // Make it a smaller cube
 		glUniformMatrix4fv(lampModelLoc, 1, GL_FALSE, glm::value_ptr(model));
 		// Draw the light object (using light's vertex attributes)
 		light.bind();
-		glDrawElements(GL_TRIANGLES, light.getVertexCount(), GL_UNSIGNED_INT, nullptr);
+		glDrawElements(GL_TRIANGLES, light.getIndexCount(), GL_UNSIGNED_INT, nullptr);
 		light.unbind();
 
 		glfwSwapBuffers(window);
 	}
 	glfwTerminate();
-	delete p;
 	return 0;
 }
 
@@ -275,7 +273,7 @@ void cursor_position_callback(GLFWwindow * window, double xpos, double ypos)
 
 void doMovement()
 {
-	lightPos = Vector3(camera.getX(), 50.0f, camera.getZ());
+	//lightPos = Vector3(camera.getX(), 50.0f, camera.getZ());
 	bool oct = keys[GLFW_KEY_O];
 	bool pers = keys[GLFW_KEY_P];
 	bool lac = keys[GLFW_KEY_L];

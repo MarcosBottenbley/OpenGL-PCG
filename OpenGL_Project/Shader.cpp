@@ -2,8 +2,79 @@
 
 Shader::Shader(const GLchar * vertexPath, const GLchar * fragmentPath)
 {
+	this->vertexPath = const_cast<GLchar*>(vertexPath);
+	this->fragmentPath = const_cast<GLchar*>(fragmentPath);
+
 	std::string vertexCode;
 	std::string fragmentCode;
+
+	ReadFiles(vertexCode, fragmentCode);
+
+	const GLchar* vShaderCode = vertexCode.c_str();
+	const GLchar* fShaderCode = fragmentCode.c_str();
+	CompileShaders(vShaderCode, fShaderCode);
+}
+
+Shader::~Shader()
+{
+}
+
+void Shader::Use()
+{
+	glUseProgram(this->Program);
+}
+
+std::vector<std::string>& Shader::GetUniformNames()
+{
+	std::vector<std::string> uniformNames;
+
+	std::ifstream vShaderFile;
+	std::ifstream fShaderFile;
+	vShaderFile.open(vertexPath);
+	fShaderFile.open(fragmentPath);
+
+	std::istringstream iss;
+	std::string line;
+	std::string word;
+	while (std::getline(vShaderFile, line))
+	{
+		iss.str (line);
+		while (iss >> word)
+		{
+			if (word == "uniform")
+			{
+				iss >> word;
+				iss >> word;
+				uniformNames.push_back(word.substr(0, word.size() - 1));
+			}
+		}
+		iss.clear();
+	}
+
+	line = "";
+	while (std::getline(fShaderFile, line))
+	{
+		iss.str (line);
+		while (iss >> word)
+		{
+			if (word == "uniform")
+			{
+				iss >> word;
+				iss >> word;
+				uniformNames.push_back(word.substr(0, word.size() - 1));
+			}
+		}
+		iss.clear();
+	}
+
+	vShaderFile.close();
+	fShaderFile.close();
+
+	return uniformNames;
+}
+
+void Shader::ReadFiles(std::string & vertexCode, std::string & fragmentCode)
+{
 	std::ifstream vShaderFile;
 	std::ifstream fShaderFile;
 
@@ -28,21 +99,9 @@ Shader::Shader(const GLchar * vertexPath, const GLchar * fragmentPath)
 	{
 		std::cout << "ERROR SHADER FILE NOT SUCCESSFULLY READ" << std::endl;
 	}
-	const GLchar* vShaderCode = vertexCode.c_str();
-	const GLchar* fShaderCode = fragmentCode.c_str();
-	compileShaders(vShaderCode, fShaderCode);
 }
 
-Shader::~Shader()
-{
-}
-
-void Shader::Use()
-{
-	glUseProgram(this->Program);
-}
-
-void Shader::compileShaders(const GLchar * vShaderCode, const GLchar * fShaderCode)
+void Shader::CompileShaders(const GLchar * vShaderCode, const GLchar * fShaderCode)
 {
 	//variables for error checking
 	GLint success;
