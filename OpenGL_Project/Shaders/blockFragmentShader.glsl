@@ -27,11 +27,6 @@ void main()
     float ambientStrength = 0.2;
     vec3 ambient = ambientStrength * lightColor;
 
-    //distance
-    float dis = sqrt((FragPos.x - lightPos.x) * (FragPos.x - lightPos.x) +
-                     (FragPos.y - lightPos.y) * (FragPos.y - lightPos.y) +
-                     (FragPos.z - lightPos.z) * (FragPos.z - lightPos.z));
-
     // Diffuse 
     vec3 norm = normalize(Normal);
     vec3 lightDir = normalize(lightPos - FragPos);
