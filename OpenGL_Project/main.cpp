@@ -23,7 +23,7 @@
 //forces opengl to use the dedicated graphics card
 extern "C"
 {
-	_declspec(dllexport) DWORD NvOptimusEnablement = 0x00000001;
+	_declspec(dllexport) DWORD NvOptimusEnablement = 0x00000000;
 }
 
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode);
@@ -92,7 +92,7 @@ int main()
 	Shader cubeShader("Shaders/vertexShader.glsl","Shaders/blockFragmentShader.glsl");
 	Shader lampShader("Shaders/vertexShader.glsl", "Shaders/lampFragmentShader.glsl");
 
-	Model block("Models/block2.model");
+	Model block("Models/block.model");
 	Model light("Models/light.model");
 
 	double lastTime = glfwGetTime();
@@ -119,7 +119,7 @@ int main()
 	projection = glm::perspective(45.0f, (GLfloat)WIDTH / (GLfloat)HEIGHT, 0.1f, 255.0f);
 
 
-	const int chunkSize = 30;
+	const int chunkSize = 50;
 	const int chunkHeight = 16;
 	Perlin* p = new Perlin();
 
@@ -127,10 +127,31 @@ int main()
 	int chunksY = 3;
 
 	std::vector<std::vector<Vector3>> terrainChunks;
+	std::vector<Matrix4> terrainModels;
 
 	glEnable(GL_DEPTH_TEST);
-	//glEnable(GL_CULL_FACE);
-	glCullFace(GL_FRONT);
+	glEnable(GL_CULL_FACE);
+	glCullFace(GL_BACK);
+
+	/*
+	for (int cx = (camera.getX() - (chunkSize + chunksX) / 2); cx < chunksX + (camera.getX() - (chunkSize + chunksX) / 2); cx++)
+	{
+		for (int cy = (camera.getZ() - (chunkSize + chunksY) / 2); cy < chunksY + (camera.getZ() - (chunkSize + chunksY) / 2); cy++)
+		{
+			std::vector<Vector3> terrainVectors;
+			for (double r = cx; r < chunkSize + cx; r++)
+			{
+				for (double c = cy; c < chunkSize + cy; c++)
+				{
+					double getnoise = 0;
+					getnoise = p->OctavePerlin(abs(r) / 30, abs(c) / 30, 0, octaves, persistence, lacunarity, scale);
+					terrainVectors.push_back(Vector3((GLfloat)r, (GLfloat)getnoise * chunkHeight, (GLfloat)c));
+				}
+			}
+			terrainChunks.push_back(terrainVectors);
+		}
+	}
+	*/
 
 	while (!glfwWindowShouldClose(window))
 	{
@@ -149,24 +170,6 @@ int main()
 
 		glfwPollEvents();
 		doMovement();
-
-		for (int cx = (camera.getX() - (chunkSize + chunksX) /2); cx < chunksX + (camera.getX() - (chunkSize + chunksX) / 2); cx++)
-		{
-			for (int cy = (camera.getZ() - (chunkSize + chunksY) /2); cy < chunksY + (camera.getZ() - (chunkSize + chunksY) / 2); cy++)
-			{
-				std::vector<Vector3> terrainVectors;
-				for (double r = cx; r < chunkSize + cx; r++)
-				{
-					for (double c = cy; c < chunkSize + cy; c++)
-					{
-						double getnoise = 0;
-						getnoise = p->OctavePerlin(abs(r) / 30, abs(c) / 30, 0, octaves, persistence, lacunarity, scale);
-						terrainVectors.push_back(Vector3((GLfloat)r, (GLfloat)getnoise * chunkHeight, (GLfloat)c));
-					}
-				}
-				terrainChunks.push_back(terrainVectors);
-			}
-		}
 
 		Vector4 skyColor = Vector4(0.2f, 0.3f, 0.5f, 1.0f);
 		//render and clear the color buffer
@@ -195,19 +198,10 @@ int main()
 		/*Scale first
 		  Translate seconds
 		  Rotate last
-		  This order keeps openGl from doing weird things*/
-		for (int x = 0; x < terrainChunks.size(); x++)
-		{
-			for (int y = 0; y < terrainChunks[x].size(); y++)
-			{
-				Matrix4 model;
-				model = glm::translate(model, terrainChunks[x][y]);
-				glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
-
-				glDrawElements(GL_TRIANGLES, block.getIndexCount(), GL_UNSIGNED_INT, nullptr);
-			}
-		}
-		terrainChunks.clear();
+		  This order keeps openGl from doing weird things
+		*/
+		glDrawElementsInstanced(GL_TRIANGLES, block.getIndexCount(), GL_UNSIGNED_INT, 0, 500 * 500);
+		//terrainChunks.clear();
 		block.unbind();
 
 		lampShader.Use();
@@ -221,7 +215,7 @@ int main()
 		glUniformMatrix4fv(lampModelLoc, 1, GL_FALSE, glm::value_ptr(model));
 		// Draw the light object (using light's vertex attributes)
 		light.bind();
-		glDrawElements(GL_TRIANGLES, light.getIndexCount(), GL_UNSIGNED_INT, nullptr);
+		glDrawElementsInstanced(GL_TRIANGLES, light.getIndexCount(), GL_UNSIGNED_INT, 0, 0);
 		light.unbind();
 
 		glfwSwapBuffers(window);

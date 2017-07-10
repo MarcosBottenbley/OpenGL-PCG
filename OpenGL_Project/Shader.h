@@ -8,6 +8,8 @@
 
 #include <GL\glew.h>
 
+#include "Glm_Common.h"
+
 class Shader
 {
 public:
@@ -17,6 +19,7 @@ public:
 	GLuint Program;
 	void Use();
 	std::vector<std::string>& GetUniformNames();
+
 private:
 	//vars
 	const GLchar * vertexPath = nullptr;
