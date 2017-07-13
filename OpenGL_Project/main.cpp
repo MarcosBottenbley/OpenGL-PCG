@@ -19,6 +19,7 @@
 #include "Camera.h"
 #include "Perlin.h"
 #include "Model.h"
+#include "TerrainGenerator.h"
 
 //forces opengl to use the dedicated graphics card
 extern "C"
@@ -32,6 +33,7 @@ void cursor_position_callback(GLFWwindow* window, double xpos, double ypos);
 void doMovement();
 
 const GLuint WIDTH = 1920, HEIGHT = 1080;
+const GLuint WIDTH2 = 1280, HEIGHT2 = 720; //for debugging purposes
 
 GLfloat lastX = WIDTH / 2.0, lastY = HEIGHT / 2.0;
 
@@ -41,18 +43,14 @@ GLfloat deltaTime = 0.0f;
 GLfloat lastFrame = 0.0f;
 
 Camera camera(Vector3(0.0f, 0.0f, 10.0f));
+TerrainGenerator* generator;
 
 // Light attributes
 glm::vec3 lightPos(camera.getX(), 50.0f, camera.getZ());
 
-int octaves = 6;
-double persistence = 0.2;
-double lacunarity = 5.0;
-double scale = 3.0;
-
 GLFWwindow* window;
 
-void init()
+void init(bool fullscreen)
 {
 	glfwInit();
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
@@ -60,7 +58,11 @@ void init()
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 	glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
 
-	window = glfwCreateWindow(WIDTH, HEIGHT, "Simulation", glfwGetPrimaryMonitor(), nullptr);
+	if (fullscreen)
+		window = glfwCreateWindow(WIDTH, HEIGHT, "Simulation", glfwGetPrimaryMonitor(), nullptr);
+	else
+		window = glfwCreateWindow(WIDTH2, HEIGHT2, "Simulation", nullptr, nullptr);
+
 	if (window == nullptr)
 	{
 		std::cout << "Failed to initilize GLFW" << std::endl;
@@ -86,8 +88,7 @@ void init()
 
 int main()
 {
-
-	init();
+	init(true);
 
 	Shader cubeShader("Shaders/blockVertexShader.glsl","Shaders/blockFragmentShader.glsl");
 	Shader lampShader("Shaders/lampVertexShader.glsl", "Shaders/lampFragmentShader.glsl");
@@ -95,82 +96,17 @@ int main()
 	Model block("Models/block.model");
 	Model light("Models/light.model");
 
+	generator = new TerrainGenerator(block, 50, camera.getX(), camera.getZ());
+
 	double lastTime = glfwGetTime();
 	int frames = 0;
 
 	Matrix4 projection;
 	projection = glm::perspective(45.0f, (GLfloat)WIDTH / (GLfloat)HEIGHT, 0.1f, 255.0f);
 
-
-	const int chunkSize = 900;
-	const int chunkHeight = 70;
-	Perlin* p = new Perlin();
-
-	int chunksX = 3;
-	int chunksY = 3;
-
-	std::vector<std::vector<Vector3>> terrainChunks;
-	std::vector<Matrix4> terrainModels;
-
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_CULL_FACE);
 	glCullFace(GL_BACK);
-
-	/*
-	for (int cx = (camera.getX() - (chunkSize + chunksX) / 2); cx < chunksX + (camera.getX() - (chunkSize + chunksX) / 2); cx++)
-	{
-		for (int cy = (camera.getZ() - (chunkSize + chunksY) / 2); cy < chunksY + (camera.getZ() - (chunkSize + chunksY) / 2); cy++)
-		{
-			std::vector<Vector3> terrainVectors;
-			for (double r = cx; r < chunkSize + cx; r++)
-			{
-				for (double c = cy; c < chunkSize + cy; c++)
-				{
-					double getnoise = 0;
-					getnoise = p->OctavePerlin(abs(r) / 30, abs(c) / 30, 0, octaves, persistence, lacunarity, scale);
-					terrainVectors.push_back(Vector3((GLfloat)r, (GLfloat)getnoise * chunkHeight, (GLfloat)c));
-				}
-			}
-			terrainChunks.push_back(terrainVectors);
-		}
-	}
-	*/
-
-	for (double r = 0; r < chunkSize; r++)
-	{
-		for (double c = 0; c < chunkSize; c++)
-		{
-			double getnoise = 0;
-			getnoise = p->OctavePerlin(abs(r) / 30, abs(c) / 30, 0, octaves, persistence, lacunarity, scale);
-			Matrix4 model;
-			model = glm::translate(model, Vector3((GLfloat)r, (GLfloat)getnoise * chunkHeight, (GLfloat)c));
-			terrainModels.push_back(model);
-		}
-	}
-
-	block.bind();
-	GLuint instanceVBO;
-	glGenBuffers(1, &instanceVBO);
-	glBindBuffer(GL_ARRAY_BUFFER, instanceVBO);
-	glBufferData(GL_ARRAY_BUFFER, terrainModels.size() * sizeof(terrainModels[0]), terrainModels.data(), GL_STATIC_DRAW);
-
-	glVertexAttribPointer(2, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(Vector4), (GLvoid*)0);
-	glEnableVertexAttribArray(2);
-
-	glVertexAttribPointer(3, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(Vector4), (GLvoid*)(sizeof(Vector4)));
-	glEnableVertexAttribArray(3);
-
-	glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(Vector4), (GLvoid*)(2 * sizeof(Vector4)));
-	glEnableVertexAttribArray(4);
-
-	glVertexAttribPointer(5, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(Vector4), (GLvoid*)(3 * sizeof(Vector4)));
-	glEnableVertexAttribArray(5);
-
-	glVertexAttribDivisor(2, 1);
-	glVertexAttribDivisor(3, 1);
-	glVertexAttribDivisor(4, 1);
-	glVertexAttribDivisor(5, 1);
-	block.unbind();
 
 	/*Scale first
 	Translate seconds
@@ -216,7 +152,7 @@ int main()
 		cubeShader.SetUniform("lightPos", Vector3(lightPos.x, lightPos.y, lightPos.z));
 		
 		block.bind();
-		glDrawElementsInstanced(GL_TRIANGLES, block.getIndexCount(), GL_UNSIGNED_INT, 0, chunkSize * chunkSize);
+		glDrawElementsInstanced(GL_TRIANGLES, block.getIndexCount(), GL_UNSIGNED_INT, 0, 100 * 100);
 		block.unbind();
 
 		lampShader.Use();
@@ -284,46 +220,36 @@ void cursor_position_callback(GLFWwindow * window, double xpos, double ypos)
 
 void doMovement()
 {
-	//lightPos = Vector3(camera.getX(), 50.0f, camera.getZ());
-	bool oct = keys[GLFW_KEY_O];
-	bool pers = keys[GLFW_KEY_P];
-	bool lac = keys[GLFW_KEY_L];
-	bool scl = keys[GLFW_KEY_K];
+	lightPos = Vector3(camera.getX(), 50.0f, camera.getZ());
 
 	if (keys[GLFW_KEY_W])
+	{
 		camera.moveCamera(FORWARD, deltaTime * 2);
+		generator->updateViewPosition(camera.getX(), camera.getZ());
+	}
 	if (keys[GLFW_KEY_S])
+	{
 		camera.moveCamera(BACKWARD, deltaTime * 2);
+		generator->updateViewPosition(camera.getX(), camera.getZ());
+	}
 	if (keys[GLFW_KEY_A])
+	{
 		camera.moveCamera(LEFT, deltaTime * 2);
+		generator->updateViewPosition(camera.getX(), camera.getZ());
+	}
 	if (keys[GLFW_KEY_D])
+	{
 		camera.moveCamera(RIGHT, deltaTime * 2);
+		generator->updateViewPosition(camera.getX(), camera.getZ());
+	}
 	if (keys[GLFW_KEY_R])
 		camera.reset();
+
 	if (keys[GLFW_KEY_UP])
-	{
 		lightPos += Vector3(0.0f, 1.0f, 0.0f) * 5.0f * deltaTime;
-		if (oct)
-			octaves++;
-		if (pers)
-			persistence += 0.1;
-		if (lac)
-			lacunarity += 0.1;
-		if (scl)
-			scale += 0.5;
-	}
 	else if (keys[GLFW_KEY_DOWN])
-	{
 		lightPos += Vector3(0.0f, -1.0f, 0.0f) * 5.0f * deltaTime;
-		if (oct)
-			octaves--;
-		if (pers)
-			persistence -= 0.1;
-		if (lac)
-			lacunarity -= 0.1;
-		if (scl)
-			scale -= 0.5;
-	}
+
 	if (keys[GLFW_KEY_LEFT])
 		lightPos += Vector3(-1.0f, 0.0f, 0.0f) * 5.0f * deltaTime;
 	if (keys[GLFW_KEY_RIGHT])

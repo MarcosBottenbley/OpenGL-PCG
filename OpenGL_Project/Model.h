@@ -6,10 +6,13 @@
 #include <iostream>
 #include <vector>
 
+#include "Glm_Common.h"
+
 class Model
 {
 public:
 	Model(const GLchar* modelPath);
+	Model(const GLchar* modelPath, const int count, const GLenum usage);
 	~Model();
 	void bind();
 	void unbind();
@@ -17,9 +20,15 @@ public:
 	GLuint getNormalCount();
 	GLuint getIndexCount();
 
+	void updateVBO(GLuint vbo, std::vector<Matrix4> data);
+
+	GLuint addEmptyVBO(int count, GLenum usage);
+
 private:
-	void addVBO(std::vector<GLfloat> data);
-	void addEBO();
+	template <typename Type>
+	GLuint addVBO(std::vector<Type> data, GLenum usage);
+
+	void addEBO(GLenum usage);
 
 	std::vector<GLfloat> vertices;
 	std::vector<GLfloat> normals;
