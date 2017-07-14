@@ -6,8 +6,6 @@ TerrainGenerator::TerrainGenerator(Model& meshObject, int chunkSize, int viewX, 
 {
 	this->meshObject = &meshObject;
 	this->chunkSize = chunkSize;
-	this->mapSize = chunkSize;
-	chunksVisibleInViewDist = ceil(maxViewDist / chunkSize);
 
 	p = new Perlin();
 	viewPosition = Vector2(viewX, viewZ);
@@ -45,10 +43,15 @@ TerrainGenerator::~TerrainGenerator()
 
 void TerrainGenerator::updateViewPosition(int viewX, int viewZ)
 {
-	viewPosition = Vector2(viewX, viewZ);
-	GenerateChunk(viewX,viewZ);
-	UpdateVisibleChunks();
-	this->meshObject->updateVBO(instanceVBO, visibleChunks);
+	float squareDist = powf(viewPosition.x - viewX, 2) + powf(viewPosition.y - viewZ, 2);
+	float dist = sqrt(squareDist);
+	if (dist > chunkSize / 4)
+	{
+		viewPosition = Vector2(viewX, viewZ);
+		GenerateChunk(viewX, viewZ);
+		UpdateVisibleChunks();
+		this->meshObject->updateVBO(instanceVBO, visibleChunks);
+	}
 }
 
 void TerrainGenerator::UpdateVisibleChunks()

@@ -2,7 +2,7 @@
 
 Perlin::Perlin()
 {
-	this->repeat = 40;
+	this->repeat = 10;
 
 	for (int x = 0; x < 512; x++)
 	{

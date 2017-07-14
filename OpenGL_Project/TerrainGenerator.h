@@ -9,8 +9,6 @@
 #include "Model.h"
 #include "Perlin.h"
 
-typedef std::vector<Matrix4> Chunk;
-
 struct pair_hash
 {
 	template <class T1, class T2>
@@ -35,16 +33,13 @@ public:
 
 private:
 	//variables
-	const float maxViewDist = 10;
 	const int octaves = 6;
-	const double persistence = 0.2;
+	const double persistence = 0.25;
 	const double lacunarity = 5.0;
 	double scale = 10.0;
 	int chunkHeight = 70;
 
 	int chunkSize;		//length and width of the chunks in blocks
-	int mapSize;		//length and width of the map in chunks
-	int chunksVisibleInViewDist;
 
 	std::unordered_map<std::pair<double,double>, Matrix4, pair_hash> myMap;
 

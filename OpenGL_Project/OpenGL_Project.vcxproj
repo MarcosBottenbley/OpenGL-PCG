@@ -26,7 +26,6 @@
     <ClCompile Include="Perlin.cpp" />
     <ClCompile Include="Renderer.cpp" />
     <ClCompile Include="Shader.cpp" />
-    <ClCompile Include="TerrainChunk.cpp" />
     <ClCompile Include="TerrainGenerator.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -37,7 +36,6 @@
     <ClInclude Include="Perlin.h" />
     <ClInclude Include="Renderer.h" />
     <ClInclude Include="Shader.h" />
-    <ClInclude Include="TerrainChunk.h" />
     <ClInclude Include="TerrainGenerator.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
