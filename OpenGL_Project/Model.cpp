@@ -1,5 +1,7 @@
 #include "Model.h"
 
+#include "Glm_Common.h"
+#include "Perlin.h"
 
 
 Model::Model(const GLchar* modelPath)
@@ -68,19 +70,28 @@ Model::Model(const GLchar* modelPath)
 
 	glGenVertexArrays(1, &VAO);
 	bind();
-	addVBO(vertices);
-	addEBO();
-	// Position attribute
+	//add the vertex data
+	addVBO(vertices, GL_STATIC_DRAW);
+
+	//add the index data
+	addEBO(GL_STATIC_DRAW);
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (GLvoid*)0);
 	glEnableVertexAttribArray(0);
 	
+	//if there are normals add the normals
 	if (!normals.empty())
 	{
-		addVBO(normals);
+		addVBO(normals, GL_STATIC_DRAW);
 		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (GLvoid*)0);
 		glEnableVertexAttribArray(1);
 	}
 	unbind();
+}
+
+Model::Model(const GLchar * modelPath, const int count, const GLenum usage) 
+	:Model(modelPath)
+{
+
 }
 
 
@@ -116,18 +127,37 @@ GLuint Model::getIndexCount()
 	return (GLuint) indices.size();
 }
 
-void Model::addVBO(std::vector<GLfloat> data)
+void Model::updateVBO(GLuint vbo, std::vector<Matrix4> data)
+{
+	glBindBuffer(GL_ARRAY_BUFFER, vbo);
+	glBufferData(GL_ARRAY_BUFFER, data.size() * sizeof(data[0]), NULL, GL_DYNAMIC_DRAW);
+	glBufferSubData(GL_ARRAY_BUFFER, 0, data.size() * sizeof(data[0]), data.data());
+}
+
+template <typename Type>
+GLuint Model::addVBO(std::vector<Type> data, GLenum usage)
 {
 	GLuint VBO;
 	VBOS.push_back(VBO);
 	glGenBuffers(1, &VBO);
 	glBindBuffer(GL_ARRAY_BUFFER, VBO);
-	glBufferData(GL_ARRAY_BUFFER, data.size() * sizeof(data[0]), data.data(), GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, data.size() * sizeof(data[0]), data.data(), usage);
+	return VBO;
 }
 
-void Model::addEBO()
+GLuint Model::addEmptyVBO(int count, GLenum usage)
+{
+	GLuint emptyVBO;
+	VBOS.push_back(emptyVBO);
+	glGenBuffers(1, &emptyVBO);
+	glBindBuffer(GL_ARRAY_BUFFER, emptyVBO);
+	glBufferData(GL_ARRAY_BUFFER, count * sizeof(Matrix4), NULL, usage);
+	return emptyVBO;
+}
+
+void Model::addEBO(GLenum usage)
 {
 	glGenBuffers(1, &EBO);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(indices[0]), indices.data(), GL_STATIC_DRAW);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(indices[0]), indices.data(), usage);
 }

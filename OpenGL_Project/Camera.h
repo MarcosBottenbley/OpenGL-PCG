@@ -27,10 +27,10 @@ public:
 
 private:
 	//camera vectors
-	Vector3 worldUp      =	Vector3(0.0f, 1.0f, 0.0f);
-	Vector3 cameraPos    =	Vector3(0.0f, 0.0f, 0.0f);
+	Vector3 worldUp      =	Vector3(0.0f, 1.0f,  0.0f);
+	Vector3 cameraPos    =	Vector3(0.0f, 0.0f,  0.0f);
 	Vector3 cameraFront  =	Vector3(0.0f, 0.0f, -1.0f);
-	Vector3 cameraTarget =	Vector3(0.0f, 0.0f, 0.0f);
+	Vector3 cameraTarget =	Vector3(0.0f, 0.0f,  0.0f);
 	Vector3 cameraDir;
 	Vector3 cameraRight;
 	Vector3 cameraUp;

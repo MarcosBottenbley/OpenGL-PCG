@@ -4,14 +4,21 @@
 #include "GL\glew.h"
 
 #include "Model.h"
+#include "Shader.h"
 
 class Renderer
 {
 public:
-	Renderer();
+	Renderer(Model& model, Shader& shader);
 	~Renderer();
 
 	void prepare();
-	void render(Model model);
+	virtual void render() = 0;
+	virtual void getUniformLocations() = 0;
+protected:
+	Model* model;
+	Shader* shader;
+private:
+	Vector4 skyColor = Vector4(0.2f, 0.3f, 0.5f, 1.0f);
 };
 
