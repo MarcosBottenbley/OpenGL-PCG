@@ -4,6 +4,7 @@
 
 TerrainGenerator::TerrainGenerator(Model& meshObject, int chunkSize, int viewX, int viewZ)
 {
+	//test
 	this->meshObject = &meshObject;
 	this->chunkSize = chunkSize;
 
