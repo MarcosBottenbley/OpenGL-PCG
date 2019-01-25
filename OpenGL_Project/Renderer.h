@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Glm_Common.h"
-#include "GL\glew.h"
+#include "glad\glad.h"
 
 #include "Model.h"
 #include "Shader.h"

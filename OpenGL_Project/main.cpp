@@ -1,6 +1,9 @@
 //GLEW
-#define GLEW_STATIC
-#include <GL\glew.h>
+//#define GLEW_STATIC
+//#include <GL\glew.h>
+
+//GLAD
+#include <glad/glad.h>
 
 //GLFW
 #include <GLFW\glfw3.h>
@@ -75,11 +78,18 @@ void init(bool fullscreen)
 	glfwSetCursorPosCallback(window, cursor_position_callback);
 	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
+	/*
 	glewExperimental = GL_TRUE;
 	if (glewInit() != GLEW_OK)
 	{
 		std::cout << "Failed to initilize GLEW" << std::endl;
 		exit(EXIT_FAILURE);
+	}
+	*/
+	if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
+	{
+		std::cout << "Failed to initialize GLAD" << std::endl;
+		return exit(EXIT_FAILURE);
 	}
 
 	glViewport(0, 0, WIDTH, HEIGHT);

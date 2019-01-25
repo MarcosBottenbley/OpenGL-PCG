@@ -3,7 +3,7 @@
 #include <math.h>
 #include <vector>
 #include <unordered_map>
-#include <GL\glew.h>
+#include <glad\glad.h>
 
 #include "Glm_Common.h"
 #include "Model.h"
